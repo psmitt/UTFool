@@ -7,7 +7,7 @@ object-oriented source (e.g. Java, JavaScript or Python).
 UTFool is highly flexible on the lexical level.
 _Keywords_, _delimiters_ and _operators_ are replaceable
 by any unique sequence of symbols.
-Besides of the usual forms of comments,
+Besides of the usual forms of _comments_,
 the UTFool source can contain _expletives_ and _aliases_
 in order to increase readability.
 UTFool does support language-specific solutions as well,
