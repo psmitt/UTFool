@@ -1,8 +1,8 @@
 # The UTFool Programming Language
 
-UTFool /pron. as <span style="text-decoration: line-through">b</span>eautiful/
-is a Unicode-based object-oriented programming language designed for
-trans-compilation to any other object-oriented source (e.g. Java, JavaScript or Python).
+UTFool /pron. as ~~b~~eautiful/ is a Unicode-based object-oriented
+programming language designed for trans-compilation to any other
+object-oriented source (e.g. Java, JavaScript or Python).
 
 UTFool is highly flexible on the lexical level.
 _Keywords_, _delimiters_ and _operators_ are replaceable
