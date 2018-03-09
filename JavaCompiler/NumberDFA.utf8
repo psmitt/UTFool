@@ -1,0 +1,150 @@
+···
+Deterministic Finite Acceptor of Number Literals
+Integer pattern: ^((0b[01]+)|(0o[0-7]+)|(0x[0-9A-Fa-f]+)|(0|[1-9]\d*))$
+Decimal pattern: ^(0|[1-9]\d*)(\.\d+)?([Ee⏨][+-]?\d+)?$
+···
+import java.util.LinkedList
+
+■ NumberDFA⦂ DFA
+
+  state⦂ State
+  ≣ State
+    GO · Start State
+    LZ · Leading Zero
+    BS · Binary Integer Start
+    BE · Binary Integer End
+    OS · Octal Integer Start
+    OE · Octal Integer End
+    HS · Hexadecimal Integer Start
+    HE · Hexadecimal Integer End
+    DI · Decimal Integer Part
+    DP · Decimal Point
+    DF · Decimal Fractional Part
+    DS · Decimal Exponent Start
+    DX · Decimal Exponent End
+    ER · Trap State
+
+  value⦂ StringBuilder°
+
+  ▶ reset
+  ⏺ start⦂ String · beginning sequence of a number literal
+    value.setLength 0
+    state: State.GO
+    if start ≠ null
+       ∀ i ∈ 0‥start.length°
+         if ¬consume start.charAt i
+             value ⨭ start.charAt i
+             state: State.ER
+
+  ▶ invalid⦂ boolean
+  ⏺ c⦂ Character · must separate number literal from the next token
+    if c.isLetterOrDigit c
+       value ⨭ c
+       state: State.ER
+       return true
+    !! return false
+
+  ▶ consume⦂ boolean
+  ⏺ c⦂ Character
+    ∢ state
+      ⬩ GO · Start
+        if c.isDigit c
+           value ⨭ c
+           state: '0' = c ? State.LZ ! State.DI
+        !! return false
+
+      ⬩ LZ · Leading Zero
+        ∢ c
+          ⬩ 'b'
+            state: State.BS
+          ⬩ 'o'
+            state: State.OS
+          ⬩ 'x'
+            state: State.HS
+          ⬩ '.'
+            state: State.DP
+          ⬩ 'E', 'e', '⏨'
+            value ⨭ 'e'
+            state: State.DS
+            return true
+            fallthrough · to avoid unreachable break
+          ‼ return invalid c
+
+        value ⨭ c
+
+      ⬩ BS, BE · Binary Integer
+        if 0 ≤ c.digit c, 2
+           value ⨭ c
+           state: State.BE
+        !! return invalid c
+
+      ⬩ OS, OE · Octal Integer
+        if 0 ≤ c.digit c, 8
+           value ⨭ c
+           state: State.OE
+        !! return invalid c
+
+      ⬩ HS, HE · Hexadecimal Integer
+        if 0 ≤ c.digit c, 16
+           value ⨭ c
+           state: State.HE
+        !! return invalid c
+
+      ⬩ DI · Decimal Integer Part
+        if c.isDigit c
+           value ⨭ c
+        ‼∢ c
+           ⬩ '.'
+             value ⨭ c
+             state: State.DP
+           ⬩ 'E', 'e', '⏨'
+             value ⨭ 'e'
+             state: State.DS
+           ‼ return invalid c
+
+      ⬩ DP · Decimal Point
+        if c.isDigit c
+           value ⨭ c
+           state: State.DF
+        !! return invalid c
+
+      ⬩ DF · Decimal Fractional Part
+        if c.isDigit c
+           value ⨭ c
+        ‼∢ c
+           ⬩ 'E', 'e', '⏨'
+             value ⨭ 'e'
+             state: State.DS
+           ‼ return invalid c
+
+      ⬩ DS · Decimal Exponent Symbol
+        isMinus⦂ boolean: (The.operators.containsKey c)
+                        ∧ "Minus" ≈ The.operators.get c
+        if c = '+' ∨ c = '-' ∨ isMinus
+           value ⨭ isMinus ? '-' ! c
+           state: State.DX
+           break
+
+        fallthrough
+
+      ⬩ DX · Decimal Exponent Part
+        if c.isDigit c
+           value ⨭ c
+           state: State.DX
+           break
+
+        fallthrough
+
+      ‼ return invalid c · State.ER · Trap State
+
+    return true
+
+  ▶ getTokens⦂ LinkedList⟨Token⟩
+    tokens⦂ LinkedList⟨Token⟩°
+    ∢ state
+      ⬩ LZ, BE, OE, HE, DI, DF, DX
+        tokens.add *Token Lex.NUM, value.toString°
+      ‼ tokens.add *Token Lex.ERR, value.toString°
+                 ⊕ " < INVALID NUMBER FORMAT"
+
+    return tokens

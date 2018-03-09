@@ -1,0 +1,99 @@
+··· 
+Deterministic Finite Acceptor of Character Literals
+Pattern: ^‵([^′]|\\[btnfr'"\\]|\\u[0-9A-Fa-f]{4})′$
+···
+import java.util.LinkedList
+
+■ CharacterDFA⦂ DFA
+
+  state⦂ State
+  ≣ State
+    GO · Start State
+    ES · Escape Sequence
+    US · Unicode Sequence
+    WC · Waiting for Closing Delimiter
+    OK · Accept State
+    ER · Trap State ( Error )
+
+  openingDelimiter⦂ String
+  closingDelimiter⦂ String°
+  closingPosition⦂ int
+  value⦂ StringBuilder° · value of the output token
+
+  ▶ reset
+  ⏺ start⦂ String
+    openingDelimiter: start
+    if start is null
+    or not (The.closingDelimiters.containsKey start)
+    or not (The.delimitedSequences.containsKey start)
+    or not ("Character" ≈ The.delimitedSequences.get start)
+       state: State.ER
+    else
+       if closingDelimiter ≠ The.closingDelimiters.get start
+          closingDelimiter: The.closingDelimiters.get start
+       closingPosition: 0
+       value.setLength 0
+       state: State.GO
+
+  ▶ consume⦂ boolean
+  ⏺ c⦂ Character
+    ∢ state
+      ⬩ GO
+        if closingDelimiter.toString° ≈ String.valueOf c
+           value ⨭ c
+           state: State.ER
+           break
+
+        if c = '\''
+        or c = '\"'
+           value ⨭ '\\'
+        
+        value ⨭ c
+        state: if c = '\\'
+               then State.ES
+               else State.WC
+
+      ⬩ ES
+        value ⨭ c
+        ∢ c
+          ⬩ 'u'
+            state: State.US
+          ⬩ 'b', 't', 'n', 'f', 'r', '\'', '\"', '\\'
+            state: State.WC
+          else
+            state: State.ER
+
+      ⬩ US
+        value ⨭ c
+        if 0 ≤ c.digit c, 16
+           if value.length° = 6
+              state: State.WC
+        else
+           state: State.ER
+
+      ⬩ WC
+        if closingDelimiter.length° > closingPosition
+           if c = closingDelimiter.charAt closingPosition
+              closingPosition◥
+           else
+              state: State.ER
+              value ⨭ closingDelimiter.substring 0, closingPosition
+              value ⨭ c = '\n' ? ' ' ! c
+           break
+
+        state: State.OK
+        fallthrough
+
+      else · State.OK or State.ER
+        return false
+
+    return true
+
+  ▶ getTokens⦂ LinkedList⟨Token⟩
+    tokens⦂ LinkedList⟨Token⟩°
+    if state ≠ State.OK
+       tokens.add *Token Lex.ERR, openingDelimiter ⊕ value.toString°
+                ⊕ " < INVALID CHARACTER LITERAL"
+    else
+       tokens.add *Token Lex.CHR, value.toString°
+    return tokens

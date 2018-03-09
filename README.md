@@ -25,6 +25,28 @@ With UTFool you can be concise or eloquent, according to your style.
 * [UTFool Lexical Structure](https://rawgit.com/psmitt/metalanguage/master/examples/UTFool%20Lexical%20Structure.xml)
 * [UTFool Syntactic Grammar](https://rawgit.com/psmitt/metalanguage/master/examples/UTFool%20Syntactic%20Grammar.xml)
 
+## Code edition, code samples
+
+UTFool source code gets created in a UTF-8 encoded text file.
+Due to the extended usage of the Unicode character set,
+it is advisable to setup a font with great coverage of the Basic
+or even the Supplementary Multilingual Plane.
+[GNU FreeMono](https://www.gnu.org/software/freefont) is a good choice.
+
+Beyond of the font selection, another common need is
+the easy typing of the different Unicode symbols on any keyboard.
+[AutoHotkey](https://autohotkey.com) offers the simplest solution
+by smart macros and handy shortcuts, making you able to insert any
+Unicode sequence on a keystroke or two.
+
+With regards to the editor, there is a wide selection on the web.
+You can use [Atom](https://atom.io) on any platform, or the lightweight
+[Notepad2](https://xhmikosr.github.io/notepad2-mod) on Windows.
+They both provide an aesthetic look for UTFool sources.
+Have a taste of it:
+
+<img alt="A screenshot of the 100 doors task solution" src="https://raw.githubusercontent.com/psmitt/UTFool/master/100_doors.png">
+
 ## UTFool Compiler to Java
 
 Coming soon...

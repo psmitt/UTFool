@@ -1,0 +1,16 @@
+···
+Deterministic Finite Automata for Lexical Analysis
+···
+import java.util.LinkedList
+
+□ DFA
+
+  § abstract
+
+    ▶ reset             · initialize or reset machine
+    ⏺ delimiter⦂ String · start or stop symbol
+    
+    ▶ consume⦂ boolean
+    ⏺ input⦂ Character
+    
+    ▶ getTokens⦂ LinkedList⟨Token⟩ · provide output
