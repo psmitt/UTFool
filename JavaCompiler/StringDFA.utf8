@@ -1,0 +1,169 @@
+···
+Deterministic Finite Acceptor of String Literals with Interpolation
+Multiple physical lines are concatenated with a single space.
+Pattern: ^‶((⸨[^⸩]*⸩)*([^″⸨]|\\[btnfr'"\\]|\\u[0-9A-Fa-f]{1,4})*)*″$
+···
+import java.util.LinkedList
+import java.util.HashSet
+
+■ StringDFA⦂ DFA
+
+  state⦂ State
+  ≣ State
+    WS · Start State ( WhiteSpace)
+    IP · Interpolation
+    IN · Indentation
+    ES · Escape Sequence
+    US · Unicode Sequence
+    OK · Accept State
+    ER · Trap State ( Error )
+
+  openingDelimiter⦂ String
+  closingDelimiter⦂ String
+  tokens⦂ LinkedList⟨Token⟩° · output
+
+  interpolation⦂ Lexer · Do not initialize here to avoid infinite callback!
+
+  ···
+  For sake of performance, the last character of string closer or
+  interpolation starter delimiters is compared to the actual character
+  to consume, as a pre-check before detecting real closure.
+  ···
+  delimiterTails⦂ HashSet⟨Character⟩°
+
+  ···
+  In order to check that String closing delimiter is not escaped,
+  escape positions get registered during the tokenization.
+  ···
+  escapes⦂ HashSet⟨Integer⟩° · escape positions start from 1 (!)
+
+  value⦂ StringBuilder°
+  ▶ rTrim · remove whitespaces from the end of value
+    🔁﹖ 0 < value.length° and
+        Character.isWhitespace value.charAt value.length° - 1
+        value.setLength value.length° - 1
+
+  ▶ reset
+  ⏺ start⦂ String
+    tokens.clear°
+    if ∄ start
+         openingDelimiter: ""
+         closingDelimiter: "\n" · for TextDFA lines
+    else
+         openingDelimiter: start
+         if ¬ (The.closingDelimiters.containsKey start)
+         or ¬ (The.delimitedSequences.containsKey start)
+         or ¬ "String" ≈ The.delimitedSequences.get start
+              state: State.ER · do not accept any input
+              return
+         else
+              closingDelimiter: The.closingDelimiters.get start
+
+    if ∄ interpolation
+         interpolation: *Lexer°
+
+    delimiterTails.add closingDelimiter.charAt closingDelimiter.length° - 1
+    ∀ ipStart ∈ The.interpolationDelimiters⦂ String
+      delimiterTails.add ipStart.charAt ipStart.length° - 1
+
+    escapes.clear°
+    value.setLength 0
+    state: State.WS
+
+  ▶ consume⦂ boolean
+  ⏺ c⦂ Character
+    ∢ state
+      ⬩ IP
+        if interpolation.consume c
+           return true
+        else
+           tokens.addAll interpolation.getTokens°
+           tokens.add *Token Lex.END, "Interpolation"
+           state: State.WS
+        fallthrough
+
+      ⬩ WS
+        value ⨭ c
+        if delimiterTails.contains c · pre-check possible closure
+           if (value.toString°.endsWith closingDelimiter) and
+           not escapes.contains value.length° - closingDelimiter.length° · end of string
+               if (closingDelimiter ≈ "\n") and
+               not value.toString°.trim°.isEmpty°
+                   rTrim°
+                   tokens.add *Token Lex.STR, value.toString°
+               else
+                   tokens.add *Token Lex.STR, value.substring 0,
+                               value.length° - closingDelimiter.length°
+               value.setLength 0
+               state: State.OK
+               return true
+           
+           for ipStart in The.interpolationDelimiters⦂ String
+               if (value.toString°.endsWith ipStart) and
+               not escapes.contains value.length° - ipStart.length° · start of interpolation
+                   tokens.add *Token Lex.STR, value.substring 0,
+                               value.length° - ipStart.length°
+                   tokens.add *Token Lex.BEG, "Interpolation"
+                   interpolation.reset ipStart
+                   value.setLength 0
+                   state: State.IP
+                   return true
+        ∢ c
+          ⬩ '\n'
+            rTrim°
+            value ⨭ " "
+            state: State.IN
+          ⬩ '\"'
+            value.setCharAt value.length° - 1, '\\'
+            escapes.add value.length°
+            value ⨭ c
+          ⬩ '\\'
+            escapes.add value.length°
+            state: State.ES
+
+      ⬩ IN
+        if ¬ c.isWhitespace c
+             state: State.WS
+             return consume c
+        if closingDelimiter ≈ "\n" · Text line
+           if c = '\n'
+              tokens.add *Token Lex.STR, value.toString°
+              value.setLength 0
+              state: State.OK
+              return true
+           value ⨭ c · preserve indentation for Text line
+
+      ⬩ ES
+        value ⨭ c
+        ∢ c
+          ⬩ '\n'
+            value.setLength value.length° - 2 · concatenate with next line
+            state: State.IN
+          ⬩ 'b', 't', 'n', 'f', 'r', '\'', '\"', '\\'
+            state: State.WS
+          ⬩ 'u':
+            state: State.US
+          else
+            state: State.ER
+
+      ⬩ US
+        value ⨭ c
+        if 0 ≤ c.digit c, 16
+           if value.length° = 6
+              state: State.WS
+           return true
+        state: State.ER
+
+      else return false · OK, ER
+      
+    return true
+
+  ▶ getTokens⦂ LinkedList⟨Token⟩
+    if state = State.IP
+       tokens.addAll interpolation.getTokens°
+       tokens.add *Token Lex.ERR, " < INCOMPLETE STRING INTERPOLATION"
+    if state ≠ State.OK
+    or value.length° > 0
+       tokens.add *Token Lex.ERR, openingDelimiter ⊕ value.toString°
+                                ⊕ " < INVALID STRING LITERAL"
+    return tokens
