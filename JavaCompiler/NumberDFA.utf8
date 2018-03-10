@@ -67,7 +67,6 @@ import java.util.LinkedList
             value ⨭ 'e'
             state: State.DS
             return true
-            fallthrough · to avoid unreachable break
           ‼ return invalid c
 
         value ⨭ c
