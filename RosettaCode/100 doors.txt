@@ -1,0 +1,25 @@
+···
+http://rosettacode.org/wiki/100_doors
+···
+■ HundredDoors 
+  § static
+    open⦂   boolean: true
+    closed⦂ boolean: false
+    doors⦂  boolean[1+100] · all initially closed
+
+    ▶ main
+    ⏺ args⦂ String[]
+      ∀ pass ∈ 1‥100
+        ∀ visited ∈ pass‥100 by pass
+          toggle the doors, visited
+      ∀ door #i ∈ doors⦂ boolean
+        if the door is open
+           System.out.printf "Door #%d is open.%n", i
+
+    ▶ toggle
+    ⏺ the door⦂ boolean[]
+    ⏺ visited⦂ int
+      if the door[visited] is closed
+         let the door[visited] be open
+      else
+         let the door[visited] be closed

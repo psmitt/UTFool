@@ -25,6 +25,16 @@ With UTFool you can be concise or eloquent, according to your style.
 * [UTFool Lexical Structure](https://rawgit.com/psmitt/metalanguage/master/examples/UTFool%20Lexical%20Structure.xml)
 * [UTFool Syntactic Grammar](https://rawgit.com/psmitt/metalanguage/master/examples/UTFool%20Syntactic%20Grammar.xml)
 
+Notice the moderate vocabulary of the grammar.
+The aim is to give you the widest room of creating your own terms.
+You can define several aliases for the same keyword in order to
+increase the expressiveness of your code.
+You can even override a keyword and make it free to use as a name,
+if you intend to trans-compile your code to a language
+where this name is used for a function or class.
+Instead of `iterate` you can write e.g.
+`repeat`, `loop`, `for`, `🔁` or `∀` within the very same project.
+
 ## Code edition, code samples
 
 UTFool source code gets created in a UTF-8 encoded text file.

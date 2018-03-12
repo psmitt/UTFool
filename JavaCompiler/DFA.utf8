@@ -8,9 +8,9 @@ import java.util.LinkedList
   § abstract
 
     ▶ reset             · initialize or reset machine
-    ⏺ delimiter⦂ String · start or stop symbol
+    ⏺ delimiter⦂ String · with a start or stop symbol
     
-    ▶ consume⦂ boolean
-    ⏺ input⦂ Character
+    ▶ consume⦂ boolean · returns false if the machine is stopped
+    ⏺ input⦂ Character · due to erroneous input or completed output
     
-    ▶ getTokens⦂ LinkedList⟨Token⟩ · provide output
+    ▶ getTokens⦂ LinkedList⟨Token⟩ · provide output token(s)

@@ -22,7 +22,7 @@ import java.util.LinkedList
     DF · Decimal Fractional Part
     DS · Decimal Exponent Start
     DX · Decimal Exponent End
-    ER · Trap State
+    ER · Trap State ( erroneous input )
 
   value⦂ StringBuilder°
 
@@ -30,26 +30,25 @@ import java.util.LinkedList
   ⏺ start⦂ String · beginning sequence of a number literal
     value.setLength 0
     state: State.GO
-    if start ≠ null
-       ∀ i ∈ 0‥start.length°
-         if ¬consume start.charAt i
-             value ⨭ start.charAt i
-             state: State.ER
+    if ∃ start
+       ∀ i ∈ 0…start.length°
+         if ¬ consume start.charAt i
+              value.append start.charAt i · shows erroneous input
+              state: State.ER
 
   ▶ invalid⦂ boolean
-  ⏺ c⦂ Character · must separate number literal from the next token
+  ⏺ c⦂ Character · should separate number literal from the next token
     if c.isLetterOrDigit c
-       value ⨭ c
+       value.append c · shows erroneous input
        state: State.ER
-       return true
-    !! return false
+    return false
 
   ▶ consume⦂ boolean
   ⏺ c⦂ Character
     ∢ state
       ⬩ GO · Start
         if c.isDigit c
-           value ⨭ c
+           value.append c
            state: '0' = c ? State.LZ ! State.DI
         !! return false
 
@@ -64,55 +63,55 @@ import java.util.LinkedList
           ⬩ '.'
             state: State.DP
           ⬩ 'E', 'e', '⏨'
-            value ⨭ 'e'
+            value.append 'e'
             state: State.DS
             return true
           ‼ return invalid c
 
-        value ⨭ c
+        value.append c
 
       ⬩ BS, BE · Binary Integer
         if 0 ≤ c.digit c, 2
-           value ⨭ c
+           value.append c
            state: State.BE
         !! return invalid c
 
       ⬩ OS, OE · Octal Integer
         if 0 ≤ c.digit c, 8
-           value ⨭ c
+           value.append c
            state: State.OE
         !! return invalid c
 
       ⬩ HS, HE · Hexadecimal Integer
         if 0 ≤ c.digit c, 16
-           value ⨭ c
+           value.append c
            state: State.HE
         !! return invalid c
 
       ⬩ DI · Decimal Integer Part
         if c.isDigit c
-           value ⨭ c
+           value.append c
         ‼∢ c
            ⬩ '.'
-             value ⨭ c
+             value.append c
              state: State.DP
            ⬩ 'E', 'e', '⏨'
-             value ⨭ 'e'
+             value.append 'e'
              state: State.DS
            ‼ return invalid c
 
       ⬩ DP · Decimal Point
         if c.isDigit c
-           value ⨭ c
+           value.append c
            state: State.DF
         !! return invalid c
 
       ⬩ DF · Decimal Fractional Part
         if c.isDigit c
-           value ⨭ c
+           value.append c
         ‼∢ c
            ⬩ 'E', 'e', '⏨'
-             value ⨭ 'e'
+             value.append 'e'
              state: State.DS
            ‼ return invalid c
 
@@ -120,7 +119,7 @@ import java.util.LinkedList
         isMinus⦂ boolean: (The.operators.containsKey c)
                         ∧ "Minus" ≈ The.operators.get c
         if c = '+' ∨ c = '-' ∨ isMinus
-           value ⨭ isMinus ? '-' ! c
+           value.append isMinus ? '-' ! c
            state: State.DX
            break
 
@@ -128,7 +127,7 @@ import java.util.LinkedList
 
       ⬩ DX · Decimal Exponent Part
         if c.isDigit c
-           value ⨭ c
+           value.append c
            state: State.DX
            break
 
@@ -144,6 +143,5 @@ import java.util.LinkedList
       ⬩ LZ, BE, OE, HE, DI, DF, DX
         tokens.add *Token Lex.NUM, value.toString°
       ‼ tokens.add *Token Lex.ERR, value.toString°
-                 ⊕ " < INVALID NUMBER FORMAT"
-
+                      ⊕ " < INVALID NUMBER FORMAT"
     return tokens

@@ -12,12 +12,12 @@ import java.util.LinkedList
     ES · Escape Sequence
     US · Unicode Sequence
     WC · Waiting for Closing Delimiter
-    OK · Accept State
-    ER · Trap State ( Error )
+    OK · Accept State ( completed output )
+    ER · Trap State ( erroneous input )
 
   openingDelimiter⦂ String
   closingDelimiter⦂ String°
-  closingPosition⦂ int
+  closingPosition⦂ int · walks through closingDelimiter in WC state
   value⦂ StringBuilder° · value of the output token
 
   ▶ reset
@@ -40,21 +40,21 @@ import java.util.LinkedList
     ∢ state
       ⬩ GO
         if closingDelimiter.toString° ≈ String.valueOf c
-           value ⨭ c
+           value.append c · shows erroneous input
            state: State.ER
-           break
+           return false
 
         if c = '\''
         or c = '\"'
-           value ⨭ '\\'
+           value.append '\\'
         
-        value ⨭ c
+        value.append c
         state: if c = '\\'
                then State.ES
                else State.WC
 
       ⬩ ES
-        value ⨭ c
+        value.append c
         ∢ c
           ⬩ 'u'
             state: State.US
@@ -62,14 +62,16 @@ import java.util.LinkedList
             state: State.WC
           else
             state: State.ER
+            return false
 
       ⬩ US
-        value ⨭ c
+        value.append c
         if 0 ≤ c.digit c, 16
            if value.length° = 6
               state: State.WC
         else
            state: State.ER
+           return false
 
       ⬩ WC
         if closingDelimiter.length° > closingPosition
@@ -77,23 +79,23 @@ import java.util.LinkedList
               closingPosition◥
            else
               state: State.ER
-              value ⨭ closingDelimiter.substring 0, closingPosition
-              value ⨭ c = '\n' ? ' ' ! c
-           break
+              value.append closingDelimiter.substring 0, closingPosition
+              value.append c = '\n' ? ' ' ! c · shows erroneous input
+              return false
+        else
+           state: State.OK
+           return false
 
-        state: State.OK
-        fallthrough
-
-      else · State.OK or State.ER
+      else · machine stopped in State.OK or State.ER
         return false
 
     return true
 
   ▶ getTokens⦂ LinkedList⟨Token⟩
     tokens⦂ LinkedList⟨Token⟩°
-    if state ≠ State.OK
-       tokens.add *Token Lex.ERR, openingDelimiter ⊕ value.toString°
-                ⊕ " < INVALID CHARACTER LITERAL"
-    else
+    if state = State.OK
        tokens.add *Token Lex.CHR, value.toString°
+    else
+       tokens.add *Token Lex.ERR, openingDelimiter ⊕ value.toString°
+                                ⊕ " < INVALID CHARACTER LITERAL"
     return tokens
