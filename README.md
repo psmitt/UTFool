@@ -55,7 +55,9 @@ You can use [Atom](https://atom.io) on any platform, or the lightweight
 They both provide an aesthetic look for UTFool sources.
 Have a taste of it:
 
-<img alt="A screenshot of the 100 doors task solution" src="https://raw.githubusercontent.com/psmitt/UTFool/master/100_doors.png">
+<img alt="A screenshot of the 100 doors task solution"
+     src="https://raw.githubusercontent.com/psmitt/UTFool/master/100_doors.png"
+     style="max-width: 866px">
 
 ## UTFool Compiler to Java
 
