@@ -57,7 +57,7 @@ Have a taste of it:
 
 <img alt="A screenshot of the 100 doors task solution"
      src="https://raw.githubusercontent.com/psmitt/UTFool/master/100_doors.png"
-     style="max-width: 866px">
+     style="max-width: 860px">
 
 ## UTFool Compiler to Java
 
