@@ -5,7 +5,7 @@ http://rosettacode.org/wiki/99_Bottles_of_Beer
   § static
     ▶ main
     ⏺ args ⦂ String[]
-      ∀ bottles ∈ 99…0 by ‐1
+      ∀ bottles ∈ 99 ⋯> 0
         System.out.println ‷
           ⸨x bottles⸩ on the wall
           ⸨x bottles⸩
