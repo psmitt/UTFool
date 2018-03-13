@@ -57,8 +57,10 @@ Have a taste of it here, and see more on
 [RosettaCode.org](http://rosettacode.org/wiki/UTFool):
 
 <img alt="A screenshot of the 100 doors task solution"
-     src="https://raw.githubusercontent.com/psmitt/UTFool/master/100_doors.png"
+     src="https://raw.githubusercontent.com/psmitt/UTFool/master/100_doors_big.png"
      width="860">
+
+![](https://raw.githubusercontent.com/psmitt/UTFool/master/100_doors.png) | ![](https://raw.githubusercontent.com/psmitt/UTFool/master/99_bottles_of_beer.png)
 
 ## UTFool Compiler to Java
 
