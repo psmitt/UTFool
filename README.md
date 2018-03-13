@@ -53,7 +53,8 @@ With regards to the editor, there is a wide selection on the web.
 You can use [Atom](https://atom.io) on any platform, or the lightweight
 [Notepad2](https://xhmikosr.github.io/notepad2-mod) on Windows.
 They both provide an aesthetic look for UTFool sources.
-Have a taste of it:
+Have a taste of it here, and see more on
+[RosettaCode.org](http://rosettacode.org/wiki/UTFool):
 
 <img alt="A screenshot of the 100 doors task solution"
      src="https://raw.githubusercontent.com/psmitt/UTFool/master/100_doors.png"
