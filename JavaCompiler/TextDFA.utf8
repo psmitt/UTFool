@@ -1,0 +1,118 @@
+···
+Deterministic Finite Acceptor of Text Literals with Interpolation
+Multiple physical lines are preserved with amended indentation.
+···
+import java.util.LinkedList
+
+■ TextDFA⦂ DFA
+
+  openingDelimiter⦂ String
+  closingDelimiter⦂ String
+  state⦂  Lex · DFA state as a Token name
+  tokens⦂ LinkedList⟨Token⟩° · output
+  lines⦂  LinkedList⟨LinkedList⟨Token⟩⟩° · completed text lines
+  line⦂   StringDFA° · next line
+  value⦂  StringBuilder° · seeking for closing delimiter
+
+  ▶ reset
+  ⏺ start⦂ String
+    tokens.clear°
+    lines.clear°
+    if ∄ start
+    or ¬(The.closingDelimiters.containsKey start)
+    or ¬(The.delimitedSequences.containsKey start)
+    or ¬"Text" ≈ The.delimitedSequences.get start
+       openingDelimiter: ""
+       state: Lex.ERR · does not accept any input
+    else
+       openingDelimiter: start
+       closingDelimiter: The.closingDelimiters.get start
+       line.reset null · stop symbol of StringDFA is '\n'
+       value.setLength 0
+       state: null · first line status until the first linebreak
+
+  ▶ consume⦂ boolean
+  ⏺ c⦂ Character
+    if ∄ state · first line before the first linebreak
+       value.append c
+       if c = '\n'
+          value.setLength 0
+          state: Lex.TXT
+
+       if c.isWhitespace c
+          return true
+       else
+          tokens.add *Token Lex.ERR,
+                     "INVALID START OF TEXT > " ⊕ openingDelimiter
+          state: Lex.TXT
+          return consume c
+
+    if state = Lex.ERR · the single stop status
+       return false
+
+    value.append c
+    if closingDelimiter.startsWith value.toString°
+       if (closingDelimiter.equals value.toString°)
+       and line.state ≠ StringDFA.State.IP · end of text
+           line.consume '\n' · send stop symbol to StringDFA
+           tokens.addAll line.getTokens°
+           · specify indentation in value
+           value.setLength 0
+           value.append tokens.removeLast°.value
+           value.setLength value.length° - closingDelimiter.length° + 1
+           if tokens.size° ≠ 0
+           or ¬ value.toString°.trim°.isEmpty°
+              tokens.add *Token Lex.ERR, value.toString° ⊕
+                         closingDelimiter ⊕ " < INVALID END OF TEXT"
+              lines.add tokens
+              tokens: *LinkedList⟨⟩° · clear would destroy the last line
+              value.setLength 0 · no indentation when error
+           · build string with properly indented lines
+           ∀ textline ∈ lines⦂ LinkedList⟨Token⟩
+             firstToken⦂ Token: textline.removeFirst°
+             if firstToken.name = Lex.ERR · invalid start of text
+                tokens.add firstToken
+             else
+                if value.length° > firstToken.value.length°
+                   tokens.add *Token Lex.STR
+                else
+                   tokens.add *Token Lex.STR,
+                               firstToken.value.substring value.length°
+             tokens.addAll textline
+             tokens.add *Token Lex.STR, System.lineSeparator°
+                   .(replaceAll "\r", "\\\\r").replaceAll "\n", "\\\\n"
+
+           state: Lex.ERR
+           return true
+
+    else · initialize new prefix of closing delimiter
+      🔁﹖ 0 < value.length° and
+          ¬ closingDelimiter.startsWith value.toString°
+            value.deleteCharAt 0
+
+    if c = '\n'
+    and line.state ≠ StringDFA.State.ES
+    and line.state ≠ StringDFA.State.IP · end of line
+        lineResult⦂ boolean: line.consume c
+        tokens.addAll line.getTokens°
+        lines.add tokens
+        tokens: *LinkedList⟨⟩° · clear would destroy the last line
+        line.reset null
+        return lineResult
+
+    if ¬ line.consume c · error ?
+       tokens.addAll line.getTokens°
+       lines.add tokens
+       tokens: *LinkedList⟨⟩° · clear would destroy the last line
+       line.reset null
+       return line.consume c
+
+    return true
+
+  ▶ getTokens⦂ LinkedList⟨Token⟩
+    if state ≠ Lex.ERR
+       tokens.clear°
+       ∀ textline ∈ lines⦂ LinkedList⟨Token⟩
+         tokens.addAll textline
+       tokens.add *Token Lex.ERR, " < INVALID TEXT LITERAL"
+    return tokens

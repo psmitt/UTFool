@@ -10,9 +10,9 @@ import java.util.HashSet
 
   state⦂ State
   ≣ State
-    WS · Start State ( WhiteSpace)
+    WS · Start State ( WhiteSpace )
     IP · Interpolation
-    IN · Indentation
+    IN · Indentation of Text line
     ES · Escape Sequence
     US · Unicode Sequence
     OK · Accept State
@@ -23,14 +23,12 @@ import java.util.HashSet
   tokens⦂ LinkedList⟨Token⟩° · output
 
   interpolation⦂ Lexer · Do not initialize here to avoid infinite callback!
-
   ···
-  For sake of performance, the last character of string closer or
-  interpolation starter delimiters is compared to the actual character
+  For sake of performance, the last character of string-closer or
+  interpolation-starter delimiters are compared to the actual character
   to consume, as a pre-check before detecting real closure.
   ···
   delimiterTails⦂ HashSet⟨Character⟩°
-
   ···
   In order to check that String closing delimiter is not escaped,
   escape positions get registered during the tokenization.
@@ -83,7 +81,7 @@ import java.util.HashSet
         fallthrough
 
       ⬩ WS
-        value ⨭ c
+        value.append c
         if delimiterTails.contains c · pre-check possible closure
            if (value.toString°.endsWith closingDelimiter) and
            not escapes.contains value.length° - closingDelimiter.length° · end of string
@@ -111,12 +109,12 @@ import java.util.HashSet
         ∢ c
           ⬩ '\n'
             rTrim°
-            value ⨭ " "
+            value.append " "
             state: State.IN
           ⬩ '\"'
             value.setCharAt value.length° - 1, '\\'
             escapes.add value.length°
-            value ⨭ c
+            value.append c
           ⬩ '\\'
             escapes.add value.length°
             state: State.ES
@@ -131,10 +129,10 @@ import java.util.HashSet
               value.setLength 0
               state: State.OK
               return true
-           value ⨭ c · preserve indentation for Text line
+           value.append c · preserve indentation for Text line
 
       ⬩ ES
-        value ⨭ c
+        value.append c
         ∢ c
           ⬩ '\n'
             value.setLength value.length° - 2 · concatenate with next line
@@ -147,7 +145,7 @@ import java.util.HashSet
             state: State.ER
 
       ⬩ US
-        value ⨭ c
+        value.append c
         if 0 ≤ c.digit c, 16
            if value.length° = 6
               state: State.WS
