@@ -60,7 +60,9 @@ Have a taste of it here, and see more on
      src="https://raw.githubusercontent.com/psmitt/UTFool/master/100_doors_big.png"
      width="860">
 
-![](https://raw.githubusercontent.com/psmitt/UTFool/master/100_doors.png) | ![](https://raw.githubusercontent.com/psmitt/UTFool/master/99_bottles_of_beer.png)
+100 Doors                                                                |  99 Bottles of Beer
+:-----------------------------------------------------------------------:|:----------------------------------------------------------------------------------:
+![](https://raw.githubusercontent.com/psmitt/UTFool/master/100_doors.png)| ![](https://raw.githubusercontent.com/psmitt/UTFool/master/99_bottles_of_beer.png)
 
 ## UTFool Compiler to Java
 
