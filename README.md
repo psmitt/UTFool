@@ -56,9 +56,7 @@ They both provide an aesthetic look for UTFool sources.
 Have a taste of it here, and see more on
 [RosettaCode.org](http://rosettacode.org/wiki/UTFool):
 
-100 doors                                                                |  99 Bottles of Beer
-:-----------------------------------------------------------------------:|:----------------------------------------------------------------------------------:
-![](https://raw.githubusercontent.com/psmitt/UTFool/master/100_doors.png)| ![](https://raw.githubusercontent.com/psmitt/UTFool/master/99_bottles_of_beer.png)
+![](https://raw.githubusercontent.com/psmitt/UTFool/master/sample.png)
 
 ## UTFool Compiler to Java
 
