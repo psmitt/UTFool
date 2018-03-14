@@ -1,7 +1,7 @@
 ···
 http://rosettacode.org/wiki/100_doors
 ···
-■ HundredDoors 
+■ HundredDoors
   § static
     ▶ main
     ⏺ args⦂  String[]
