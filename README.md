@@ -49,7 +49,7 @@ the easy typing of the different Unicode symbols on any keyboard.
 by smart macros and handy shortcuts, making you able to insert any
 Unicode sequence on a keystroke or two.
 
-With regards to the editor, there is a wide selection on the web.
+Regarding the text editors you find a wide selection on the web.
 You can use [Atom](https://atom.io) on any platform, or the lightweight
 [Notepad2](https://xhmikosr.github.io/notepad2-mod) on Windows.
 They both provide an aesthetic look for UTFool sources.
