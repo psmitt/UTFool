@@ -11,12 +11,8 @@ import java.util.LinkedList
   ≣ State
     GO · Start State
     LZ · Leading Zero
-    BS · Binary Integer Start
-    BE · Binary Integer End
-    OS · Octal Integer Start
-    OE · Octal Integer End
-    HS · Hexadecimal Integer Start
-    HE · Hexadecimal Integer End
+    NS · Non-Decimal Start
+    NE · Non-Decimal End
     DI · Decimal Integer Part
     DP · Decimal Point
     DF · Decimal Fractional Part
@@ -25,6 +21,7 @@ import java.util.LinkedList
     ER · Trap State ( erroneous input )
 
   value⦂ StringBuilder°
+  radix⦂ int: 10 · decimal by default
 
   ▶ reset
   ⏺ start⦂ String · beginning sequence of a number literal
@@ -55,11 +52,14 @@ import java.util.LinkedList
       ⬩ LZ · Leading Zero
         ∢ c
           ⬩ 'b'
-            state: State.BS
+            radix: 2
+            state: State.NS
           ⬩ 'o'
-            state: State.OS
+            radix: 8
+            state: State.NS
           ⬩ 'x'
-            state: State.HS
+            radix:16
+            state: State.NS
           ⬩ '.'
             state: State.DP
           ⬩ 'E', 'e', '⏨'
@@ -70,22 +70,10 @@ import java.util.LinkedList
 
         value.append c
 
-      ⬩ BS, BE · Binary Integer
-        if 0 ≤ c.digit c, 2
+      ⬩ NS, NE · Non-Decimal Integer
+        if 0 ≤ c.digit c, radix
            value.append c
-           state: State.BE
-        !! return invalid c
-
-      ⬩ OS, OE · Octal Integer
-        if 0 ≤ c.digit c, 8
-           value.append c
-           state: State.OE
-        !! return invalid c
-
-      ⬩ HS, HE · Hexadecimal Integer
-        if 0 ≤ c.digit c, 16
-           value.append c
-           state: State.HE
+           state: State.NE
         !! return invalid c
 
       ⬩ DI · Decimal Integer Part
@@ -140,7 +128,7 @@ import java.util.LinkedList
   ▶ getTokens⦂ LinkedList⟨Token⟩
     tokens⦂ LinkedList⟨Token⟩°
     ∢ state
-      ⬩ LZ, BE, OE, HE, DI, DF, DX
+      ⬩ LZ, NE, DI, DF, DX
         tokens.add *Token Lex.NUM, value.toString°
       ‼ tokens.add *Token Lex.ERR, value.toString°
                       ⊕ " < INVALID NUMBER FORMAT"
