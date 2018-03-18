@@ -109,6 +109,7 @@ import java.util.HashSet
         ∢ c
           ⬩ '\n'
             rTrim°
+            escapes.clear°
             value.append " "
             state: State.IN
           ⬩ '\"'
