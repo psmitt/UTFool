@@ -48,22 +48,22 @@ An example of a reasonable new order:
 #### I. Unary operators
 #### II. Binary operators
 
-1. bitwise operations
+1. bitwise operators
    * shifts and rotations
    * and, or, xor
-2. arithmetic operations
+2. arithmetic operators
    * exponentiation
-   * multiplicative operations
-   * additive operations
-3. string operations
+   * multiplicative operators
+   * additive operators
+3. string operators
    * concatenation
-4. list operations
+4. list operators
    * list separator
-5. relations ( chaining is supported )
-6. logical operations
+5. relational operators ( chaining is supported )
+6. logical operators
    * and, or, xor
    * nand, nor
-7. coalesce operations
+7. coalescing operators
    * first-non-false
    * first-non-null
 
