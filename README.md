@@ -35,6 +35,40 @@ where this name is used for a function or class.
 Instead of `iterate` you can write e.g.
 `repeat`, `loop`, `for`, `🔁` or `∀` within the very same project.
 
+## Flexible Binary Operator Precedence
+
+Have you even wondered why bitwise operators have lower precedence
+than relational operators, or why bit-shift is weaker than addition?
+This heritage from C can be overridden now in UTFool.
+UTFool offers you the freedom to arbitrarily redefine the precedence
+of binary operators.
+
+An example of a reasonable new order:
+
+#### I. Unary operators
+#### II. Binary operators
+
+1. bitwise operations
+   * shifts and rotations
+   * and, or, xor
+2. arithmetic operations
+   * exponentiation
+   * multiplicative operations
+   * additive operations
+3. string operations
+   * concatenation
+4. list operations
+   * list separator
+5. relations ( chaining is supported )
+6. logical operations
+   * and, or, xor
+   * nand, nor
+7. coalesce operations
+   * first-non-false
+   * first-non-null
+
+#### III. Ternary operator
+
 ## Code edition, code samples
 
 UTFool source code gets created in a UTF-8 encoded text file.
