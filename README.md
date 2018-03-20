@@ -86,7 +86,7 @@ Unicode sequence on a keystroke or two.
 Regarding the text editors you find a wide selection on the web.
 You can use [Atom](https://atom.io) on any platform, or the lightweight
 [Notepad2](https://xhmikosr.github.io/notepad2-mod) on Windows.
-They both provide an aesthetic look for UTFool sources.
+They both provide you the aesthetic appearance of UTFool sources.
 Have a taste of it here, and see more on
 [RosettaCode.org](http://rosettacode.org/wiki/UTFool):
 
