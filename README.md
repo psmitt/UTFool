@@ -48,6 +48,7 @@ An example of a reasonable new order:
 <table>
 <tr>
 <td>
+
 #### I. Unary operators
 #### II. Binary operators
 
@@ -73,7 +74,7 @@ An example of a reasonable new order:
 #### III. Ternary operator
 </td>
 <td>
-![](https://raw.githubusercontent.com/psmitt/UTFool/master/operators.png)
+<img src="https://raw.githubusercontent.com/psmitt/UTFool/master/operators.png"/>
 </td>
 </table>
 
