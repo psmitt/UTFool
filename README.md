@@ -75,7 +75,7 @@ An example of a reasonable new order:
 </td>
 <th>
 / a sample from the operator precedence file /
-<br/>
+<br/><br/>
 <img src="https://raw.githubusercontent.com/psmitt/UTFool/master/operators.png"/>
 </th>
 </table>
