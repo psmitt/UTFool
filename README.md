@@ -45,6 +45,9 @@ of binary operators.
 
 An example of a reasonable new order:
 
+<table>
+<tr>
+<td>
 #### I. Unary operators
 #### II. Binary operators
 
@@ -68,6 +71,11 @@ An example of a reasonable new order:
    * first-non-null
 
 #### III. Ternary operator
+</td>
+<td>
+![](https://raw.githubusercontent.com/psmitt/UTFool/master/operators.png)
+</td>
+</table>
 
 ## Code edition, code samples
 
