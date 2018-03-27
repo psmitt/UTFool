@@ -1,0 +1,18 @@
+import java.util.LinkedList
+
+■ Line
+  indentation⦂ int
+  tokens⦂ LinkedList⟨Token⟩
+  
+  ▶ new
+  ⏺ indentation⦂ int
+  ⏺ tokens⦂ LinkedList⟨Token⟩
+    @indentation: indentation
+    @tokens: ∃ tokens ? tokens ! *LinkedList⟨Token⟩°
+
+  ▶ toString⦂ String
+    result⦂ StringBuilder (*String *char[indentation]).replace "\u0000", "\t"
+    result.(append "[IND " ⨭ indentation ⨭ "]")
+    ∀ token ∈ tokens⦂ Token
+      result.append token
+    return result.toString°

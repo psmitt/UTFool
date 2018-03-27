@@ -19,15 +19,15 @@ import java.util.LinkedList
     tokens.clear°
     lines.clear°
     if ∄ start
-    or ¬(The.closingDelimiters.containsKey start)
-    or ¬(The.delimitedSequences.containsKey start)
-    or ¬"Text" ≈ The.delimitedSequences.get start
+    or ¬ The.closingDelimiters.containsKey start
+    or ¬ The.delimitedSequences.containsKey start
+    or ¬ "Text" ≈ The.delimitedSequences.get start
        openingDelimiter: ""
        state: Lex.ERR · does not accept any input
     else
        openingDelimiter: start
        closingDelimiter: The.closingDelimiters.get start
-       line.reset null · stop symbol of StringDFA is '\n'
+       line.reset null · so stop symbol of StringDFA is '\n'
        value.setLength 0
        state: null · first line status until the first linebreak
 
@@ -39,24 +39,22 @@ import java.util.LinkedList
           value.setLength 0
           state: Lex.TXT
 
-       if c.isWhitespace c
-          return true
+       if c.isWhitespace c then return true
        else
           tokens.add *Token Lex.ERR,
                      "INVALID START OF TEXT > " ⊕ openingDelimiter
           state: Lex.TXT
           return consume c
 
-    if state = Lex.ERR · the single stop status
-       return false
+    if state = Lex.ERR then return false
 
     value.append c
     if closingDelimiter.startsWith value.toString°
-       if (closingDelimiter.equals value.toString°)
+       if  closingDelimiter.equals value.toString°
        and line.state ≠ StringDFA.State.IP · end of text
            line.consume '\n' · send stop symbol to StringDFA
            tokens.addAll line.getTokens°
-           · specify indentation in value
+           ⃫Specify indentation in value
            value.setLength 0
            value.append tokens.removeLast°.value
            value.setLength value.length° - closingDelimiter.length° + 1
@@ -67,7 +65,7 @@ import java.util.LinkedList
               lines.add tokens
               tokens: *LinkedList⟨⟩° · clear would destroy the last line
               value.setLength 0 · no indentation when error
-           · build string with properly indented lines
+           ⃫Build string with properly indented lines
            ∀ textline ∈ lines⦂ LinkedList⟨Token⟩
              firstToken⦂ Token: textline.removeFirst°
              if firstToken.name = Lex.ERR · invalid start of text

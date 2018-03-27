@@ -1,0 +1,152 @@
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.util.HashMap
+import java.util.HashSet
+import java.util.Map
+import java.util.Set
+
+■ The
+  ≣ Symbol
+    DELIMITER
+    OPERATOR
+    KEYWORD
+    ALIAS
+    EMBEDDED_CODE
+    EXPLETIVE
+    RESERVED_WORD
+    PREFIX
+
+  § static
+    § final
+      symbols⦂ HashMap⟨String, Symbol⟩° · symbol -> lexical category
+
+      delimitedSequences⦂      HashMap⟨String, String⟩° · opening delimiter -> delimited sequence (e.g.literal)
+      closingDelimiters⦂       HashMap⟨String, String⟩° · opening delimiter -> closing delimiter
+      interpolationDelimiters⦂ HashSet⟨String⟩°         · interpolation opening delimiters
+
+      operators⦂        HashMap⟨String, String⟩°  · symbol -> operation
+      precedences⦂      HashMap⟨String, Integer⟩° · operation -> precedence
+      arities⦂          HashMap⟨String, Integer⟩° · operation -> arity
+      leftAssociatives⦂ HashSet⟨String⟩°          · left associative operations
+
+      keywords⦂         HashMap⟨String, String⟩°      · symbol -> ultimate non-terminal syntactic unit
+      aliases⦂          HashMap⟨String, String⟩°      · symbol -> code replacement (e.g. name or reference)
+      embeddedCode⦂     HashMap⟨String, Set⟨String⟩⟩° · language name -> embedded code
+      expletives⦂       HashSet⟨String⟩°              · symbols to drop
+      reservedWords⦂    HashMap⟨String, Set⟨String⟩⟩° · language name -> reserved words
+
+    ▶ collisionError
+    ⏺ symbol⦂ String
+    ⏺ category⦂ Symbol
+      System.err.println "
+        Collision of Symbols (⸨category.name°⸩ vs.
+        ⸨(symbols.get symbol).name°⸩): ⸨symbol⸩"
+      System.exit 1
+
+    ▶ registerSymbol
+    ⏺ symbol⦂ StringBuilder
+    ⏺ category⦂ Symbol
+      completeSequence⦂ String: symbol.toString°
+      if symbols.containsKey completeSequence
+         ∢ category
+           ⬩ OPERATOR
+             if symbols.get completeSequence = Symbol.DELIMITER
+                collisionError completeSequence, category
+           ⬩ KEYWORD
+             ∢ symbols.get completeSequence
+               ⬩ DELIMITER, OPERATOR, KEYWORD
+                 collisionError completeSequence, category
+           ⬩ ALIAS
+             if symbols.get completeSequence = Symbol.ALIAS
+                collisionError completeSequence, category
+      if ¬ symbols.containsKey completeSequence
+        or symbols.get completeSequence = Symbol.PREFIX
+           symbols.put completeSequence, category
+
+      ⃫register prefixes
+      symbol.setLength symbol.length° - 1
+      🔁﹖ symbol.length° > 0 and ¬ symbols.containsKey symbol.toString°
+          symbols.put symbol.toString°, Symbol.PREFIX
+          symbol.setLength symbol.length° - 1
+
+  static · initializer block
+    try
+        baseDirectory⦂ Path: Paths.get "."
+
+        ∀ line ∈ Files.readAllLines Paths.get baseDirectory.toString°, "delimiters.tsv" ⦂ String
+          delimiters⦂ String[]: line.trim°.split "\\s*\\t+\\s*"
+          if delimiters.length > 1 · not an empty line
+             registerSymbol *(StringBuilder delimiters[0]), Symbol.DELIMITER
+             delimitedSequences.put delimiters[0], delimiters[1]
+             ∢ delimiters[2]
+               ⬩ "LineBreak" ⭆ closingDelimiters.put delimiters[0], "\n"
+               ⬩ "Space"     ⭆ closingDelimiters.put delimiters[0], " "
+               else
+                 registerSymbol *(StringBuilder delimiters[2]), Symbol.DELIMITER
+                 closingDelimiters.put delimiters[0], delimiters[2]
+             ∢ delimiters[1]
+               ⬩ "Interpolation"
+                 interpolationDelimiters.add delimiters[0]
+               ⬩ "Expression", "Array", "TypeList"
+                 delimitedSequences.put delimiters[2], delimiters[1]
+
+        precedence⦂ Integer: 0
+        ∀ line ∈ Files.readAllLines Paths.get baseDirectory.toString°, "operators.tsv" ⦂ String
+          operator⦂ String[]: line.trim°.split "\\s*\\t+\\s*"
+          if operator.length ≤ 1 · empty line
+             precedence◥
+          else
+              registerSymbol *(StringBuilder operator[0]), Symbol.OPERATOR
+              operators.put operator[0], operator[1]
+              precedences.put operator[1], precedence
+              ∢ operator[2]
+                ⬩ "unary postfix" ⭆ arities.put operator[1], 0
+                ⬩ "unary prefix"  ⭆ arities.put operator[1], 1
+                ⬩ "binary"        ⭆ arities.put operator[1], 2
+                ⬩ "ternary"       ⭆ arities.put operator[1], 3
+              if operator[3] ≈ "left"
+                 leftAssociatives.add operator[1]
+              if operator[1] ≈ "ListSeparator"
+                 precedences.put "FunctionCall", precedence
+                 arities.put "FunctionCall", 2
+
+        ∀ line ∈ Files.readAllLines Paths.get baseDirectory.toString°, "keywords.tsv" ⦂ String
+          words⦂ String[]: line.trim°.split "\\s*\\t+\\s*"
+          if words.length > 1 · not an empty line
+             registerSymbol *(StringBuilder words[0]), Symbol.KEYWORD
+             keywords.put words[0], words[1]
+
+        ∀ line ∈ Files.readAllLines Paths.get baseDirectory.toString°, "aliases.tsv" ⦂ String
+          alias⦂ String[]: line.trim°.split "\\s*\\t+\\s*"
+          if alias.length > 1 · not an empty line
+             registerSymbol *(StringBuilder alias[0]), Symbol.ALIAS
+             aliases.put alias[0], alias[1]
+
+        ∀ entry ∈ Files.newDirectoryStream baseDirectory, "embedded_code_*.tsv" ⦂ Path
+          fileName⦂ String: entry.getFileName().toString°
+          languageName⦂ String: fileName.(substring "embedded_code_".length°, fileName.length° - 4).trim°
+          embeddedCode.put languageName, *HashSet⟨String⟩°
+          ∀ line ∈ Files.readAllLines entry.getFileName° ⦂ String
+            registerSymbol *(StringBuilder line), Symbol.EMBEDDED_CODE
+            embeddedCode.(get languageName).add line
+
+        ∀ line ∈ Files.readAllLines Paths.get baseDirectory.toString°, "expletives.tsv" ⦂ String
+          expletive⦂ String: line.trim°
+          registerSymbol *(StringBuilder expletive), Symbol.EXPLETIVE
+          expletives.add expletive
+
+        ∀ entry ∈ Files.newDirectoryStream baseDirectory, "reserved_words_*.tsv" ⦂ Path
+          fileName⦂ String: entry.getFileName().toString°
+          languageName⦂ String: fileName.(substring "reserved_words_".length°, fileName.length° - 4).trim°
+          reservedWords.put languageName, *HashSet⟨String⟩°
+          ∀ line ∈ Files.readAllLines entry.getFileName° ⦂ String
+            word⦂ String[]: line.trim°.split "\\s*\\t+\\s*"
+            if word.length = 1
+            or ¬(word[1] ≈ "KEY") ∧ ¬(word[1] ≈ "COD") ∧ ¬(word[1] ≈ "NAM")
+               registerSymbol *(StringBuilder word[0]), Symbol.RESERVED_WORD
+               reservedWords.(get languageName).add word[0]
+
+    catch e⦂ IOException
+          System.out.println "⸨e.getClass°.getSimpleName°⸩ - ⸨e.getMessage°⸩"

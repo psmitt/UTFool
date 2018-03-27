@@ -1,0 +1,59 @@
+■ Token
+  name⦂ Lex
+  value⦂ String
+  
+  ▶ new
+  ⏺ name⦂ Lex
+    @ name, ""
+
+  ▶ new
+  ⏺ name⦂ Lex
+  ⏺ value⦂ String
+    @name: name
+    @value: value
+
+  ▶ toString⦂ String
+    ⏎ "[⸨name⸩" ⊕ (value.isEmpty° ? "]" ! " ⸨value⸩]")
+
+  ▶ equals⦂ boolean
+  ⏺ name⦂ Lex
+  ⏺ value⦂ String
+    ⏎ @name = name
+    ∧ @value ≈ value
+
+  ▶ equals⦂ boolean
+  ⏺ object⦂ Object
+    ⏎ @name = Token⋆object.name
+    ∧ @value ≈ Token⋆object.value
+
+≣ Lex · lexical symbols
+
+  IND · Indentation
+  WSP · WhiteSpace
+  SYM · Symbol
+
+  COM · LineComment
+  BLC · BlockComment
+  COD · EmbeddedCode
+
+  KEY · Keyword
+  NAM · Name or CName
+
+  OPR · Operator
+
+  BEG · Opening Delimiter
+  END · Closing Delimiter
+
+  ERR · Error (trap or stop)
+
+  ͞Literals:
+
+  NUM · Number
+
+  CHR · Character
+  STR · String
+  TXT · Text
+
+  REG · RegularExpression
+  REB · RegularBlock
+  FLG · Regular Expression Flags

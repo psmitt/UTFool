@@ -1,0 +1,26 @@
+■ Block
+  name⦂ Head
+  value⦂ String
+
+  ▶ new
+  ⏺ name⦂ Head
+    @ name, "}"
+
+  ▶ new
+  ⏺ name⦂ Head
+  ⏺ value⦂ String
+    @name: name
+    @value: value
+
+  ▶ equals⦂ boolean
+  ⏺ name⦂ Head
+  ⏺ value⦂ String
+    ⏎ @name = name
+    ∧ @value ≈ value
+
+≣ Head
+  ANONYM    · Anonymous Function or Class, or inner scope
+  CONSTANTS · Constants for enum constants
+  CLASS     · Class for constructor name
+  SELECTION · Selection head for cases
+  CASE      · Case for break or fallthrough

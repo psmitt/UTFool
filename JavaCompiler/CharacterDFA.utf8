@@ -23,14 +23,13 @@ import java.util.LinkedList
   ▶ reset
   ⏺ start⦂ String
     openingDelimiter: start
-    if start is null
-    or not (The.closingDelimiters.containsKey start)
-    or not (The.delimitedSequences.containsKey start)
-    or not ("Character" ≈ The.delimitedSequences.get start)
+    if ∄ start
+    or ¬ The.closingDelimiters.containsKey start
+    or ¬ The.delimitedSequences.containsKey start
+    or ¬ "Character" ≈ The.delimitedSequences.get start
        state: State.ER
     else
-       if closingDelimiter ≠ The.closingDelimiters.get start
-          closingDelimiter: The.closingDelimiters.get start
+       closingDelimiter: The.closingDelimiters.get start
        closingPosition: 0
        value.setLength 0
        state: State.GO
@@ -44,22 +43,15 @@ import java.util.LinkedList
            state: State.ER
            return false
 
-        if c = '\''
-        or c = '\"'
-           value.append '\\'
-        
+        value.append '\\' if c = ‵'′ ∨ c = ‵"′
         value.append c
-        state: if c = '\\'
-               then State.ES
-               else State.WC
+        state: c = '\\' ? State.ES ! State.WC
 
       ⬩ ES
         value.append c
         ∢ c
-          ⬩ 'u'
-            state: State.US
-          ⬩ 'b', 't', 'n', 'f', 'r', '\'', '\"', '\\'
-            state: State.WC
+          ⬩ 'u' ⭆ state: State.US
+          ⬩ 'b', 't', 'n', 'f', 'r', ‵'′, ‵"′, '\\' ⭆ state: State.WC
           else
             state: State.ER
             return false
@@ -67,8 +59,7 @@ import java.util.LinkedList
       ⬩ US
         value.append c
         if 0 ≤ c.digit c, 16
-           if value.length° = 6
-              state: State.WC
+           state: State.WC if value.length° = 6
         else
            state: State.ER
            return false
@@ -80,7 +71,7 @@ import java.util.LinkedList
            else
               state: State.ER
               value.append closingDelimiter.substring 0, closingPosition
-              value.append c = '\n' ? ' ' ! c · shows erroneous input
+              value.append (c = '\n' ? ' ' ! c) · shows erroneous input
               return false
         else
            state: State.OK

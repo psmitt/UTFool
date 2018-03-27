@@ -33,12 +33,12 @@ import java.util.HashSet
   In order to check that String closing delimiter is not escaped,
   escape positions get registered during the tokenization.
   ···
-  escapes⦂ HashSet⟨Integer⟩° · escape positions start from 1 (!)
+  escapes⦂ HashSet⟨Integer⟩° · escape positions starting from 1 (!)
 
   value⦂ StringBuilder°
   ▶ rTrim · remove whitespaces from the end of value
-    🔁﹖ 0 < value.length° and
-        Character.isWhitespace value.charAt value.length° - 1
+    🔁﹖ 0 < value.length°
+    and Character.isWhitespace value.charAt value.length° - 1
         value.setLength value.length° - 1
 
   ▶ reset
@@ -49,8 +49,8 @@ import java.util.HashSet
          closingDelimiter: "\n" · for TextDFA lines
     else
          openingDelimiter: start
-         if ¬ (The.closingDelimiters.containsKey start)
-         or ¬ (The.delimitedSequences.containsKey start)
+         if ¬ The.closingDelimiters.containsKey start
+         or ¬ The.delimitedSequences.containsKey start
          or ¬ "String" ≈ The.delimitedSequences.get start
               state: State.ER · do not accept any input
               return
@@ -72,8 +72,7 @@ import java.util.HashSet
   ⏺ c⦂ Character
     ∢ state
       ⬩ IP
-        if interpolation.consume c
-           return true
+        if interpolation.consume c then return true
         else
            tokens.addAll interpolation.getTokens°
            tokens.add *Token Lex.END, "Interpolation"
@@ -97,8 +96,8 @@ import java.util.HashSet
                return true
            
            for ipStart in The.interpolationDelimiters⦂ String
-               if (value.toString°.endsWith ipStart) and
-               not escapes.contains value.length° - ipStart.length° · start of interpolation
+               if (value.toString°.endsWith ipStart)
+                ∧¬ escapes.contains value.length° - ipStart.length° · start of interpolation
                    tokens.add *Token Lex.STR, value.substring 0,
                                value.length° - ipStart.length°
                    tokens.add *Token Lex.BEG, "Interpolation"
@@ -138,12 +137,9 @@ import java.util.HashSet
           ⬩ '\n'
             value.setLength value.length° - 2 · concatenate with next line
             state: State.IN
-          ⬩ 'b', 't', 'n', 'f', 'r', '\'', '\"', '\\'
-            state: State.WS
-          ⬩ 'u':
-            state: State.US
-          else
-            state: State.ER
+          ⬩ 'b', 't', 'n', 'f', 'r', ‵'′, ‵"′, '\\' ⭆ state: State.WS
+          ⬩ 'u' ⭆ state: State.US
+          else state: State.ER
 
       ⬩ US
         value.append c

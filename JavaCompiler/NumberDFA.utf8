@@ -50,23 +50,19 @@ import java.util.LinkedList
         !! return false
 
       ⬩ LZ · Leading Zero
+        state: State.NS
         ∢ c
-          ⬩ 'b'
-            radix: 2
-            state: State.NS
-          ⬩ 'o'
-            radix: 8
-            state: State.NS
-          ⬩ 'x'
-            radix:16
-            state: State.NS
-          ⬩ '.'
-            state: State.DP
+          ⬩ 'b' ⭆ radix: 2
+          ⬩ 'o' ⭆ radix: 8
+          ⬩ 'x' ⭆ radix: 16
+          ⬩ '.' ⭆ state: State.DP
           ⬩ 'E', 'e', '⏨'
             value.append 'e'
             state: State.DS
             return true
-          ‼ return invalid c
+          ‼
+            state: State.LZ · fallback 
+            return invalid c
 
         value.append c
 
@@ -77,8 +73,7 @@ import java.util.LinkedList
         !! return invalid c
 
       ⬩ DI · Decimal Integer Part
-        if c.isDigit c
-           value.append c
+        if c.isDigit c then value.append c
         ‼∢ c
            ⬩ '.'
              value.append c
@@ -95,8 +90,7 @@ import java.util.LinkedList
         !! return invalid c
 
       ⬩ DF · Decimal Fractional Part
-        if c.isDigit c
-           value.append c
+        if c.isDigit c then value.append c
         ‼∢ c
            ⬩ 'E', 'e', '⏨'
              value.append 'e'
@@ -104,10 +98,10 @@ import java.util.LinkedList
            ‼ return invalid c
 
       ⬩ DS · Decimal Exponent Symbol
-        isMinus⦂ boolean: (The.operators.containsKey c)
+        isMinus⦂ boolean: The.operators.containsKey c
                         ∧ "Minus" ≈ The.operators.get c
         if c = '+' ∨ c = '-' ∨ isMinus
-           value.append isMinus ? '-' ! c
+           value.append (isMinus ? '-' ! c)
            state: State.DX
            break
 
