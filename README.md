@@ -74,7 +74,7 @@ An example of a reasonable new order:
 #### III. Ternary operator
 </td>
 <th>
-<div>/ a sample from the operator precedence file /</div>
+<div>/ sample: part of the operator precedence file /</div>
 <br/>
 <img src="https://raw.githubusercontent.com/psmitt/UTFool/master/operators.png"/>
 </th>
