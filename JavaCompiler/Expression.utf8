@@ -1,0 +1,16 @@
+■ Expression
+  root⦂ Token
+  left⦂ Expression
+  right⦂ Expression
+  
+  ▶ new
+  ⏺ root⦂ Token
+  ⏺ left⦂ Expression
+  ⏺ right⦂ Expression
+    @root: root
+    @left: left
+    @right: right
+
+  ▶ toString⦂ String
+    if ∄ left and ∄ right then return root.toString°
+    return "(⸨root⸩:⸨∃left?left!""⸩⸨∃right?";"⊕right!""⸩)"

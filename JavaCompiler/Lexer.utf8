@@ -1,0 +1,456 @@
+···
+Lexical Analyser of Source Lines
+[Indentation][SectionSign][EmbeddedCode][Tokens][LineComment]
+···
+import java.util.LinkedList
+import java.util.HashMap
+import java.util.Map
+
+■ Lexer⦂ DFA
+  state⦂ Lex
+
+  lines⦂ LinkedList⟨Line⟩   · final output
+  tokens⦂ LinkedList⟨Token⟩ · current working item for building next line
+
+  indentations⦂ LinkedList⟨String⟩° · indentation stack
+  indentation⦂ StringBuilder°       · current indentation
+
+  closingDelimiter⦂ String · stop symbol for the current simple delimited sequence
+  stopInterpolation⦂ String · stop symbol for interpolation (embedded lexical analysis)
+
+  dfa⦂ HashMap⟨Lex, DFA⟩° · Helper DFAs for Literals
+
+  symbol⦂ String · found Delimiter, Keyword, Operator, EmbeddedCode or Expletive
+  prefix⦂ StringBuilder° · current working item for finding next symbol
+
+  ▶ new
+    reset null
+
+  ▶ new
+  ⏺ source⦂ String
+    reset null
+    analyse source.replaceAll ↵
+       "(\\r\\n)|\\u000B|\\u000C|\\u2028|\\u2029", "\n" · LineBreak
+    if source.charAt source.length() - 1 ≠ '\n' · final empty line missing
+       consume '\n' · simulate final empty line
+
+  ▶ reset
+  ⏺ startInterpolation⦂ String
+    lines: *LinkedList⟨Line⟩°
+    tokens: *LinkedList⟨Token⟩°
+
+    if ∃ startInterpolation
+         stopInterpolation: The.closingDelimiters.get startInterpolation
+         state: Lex.WSP · Initial state for interpolation: WhiteSpace
+    else
+         stopInterpolation: null
+         state: Lex.IND · Initial state for analysis: Indentation
+         indentations.clear°
+         indentation.setLength 0
+
+    dfa.put Lex.NUM, *NumberDFA°
+    dfa.put Lex.CHR, *CharacterDFA°
+    dfa.put Lex.STR, *StringDFA°
+    dfa.put Lex.TXT, *TextDFA°
+
+    symbol: null
+    prefix.setLength 0
+
+  ▶ analyse⦂ boolean
+  ⏺ source⦂ String
+    ∀ i ∈ 0 … source.length°
+      return false unless consume source.charAt i
+    return true
+
+  ▶ consume⦂ boolean
+  ⏺ c⦂ Character
+    ∢ state
+      ⬩ IND · Indentation
+        if c = '\n' · drop empty line
+           indentation.setLength 0
+           tokens: *LinkedList⟨Token⟩°
+           return true
+        if c.isWhitespace c
+           indentation.append c
+           return true
+        ͞End of Indentation
+        thisIndentation⦂ String: indentation.toString°
+        lastIndentation⦂ String: indentations.peekLast°
+        if ∄ lastIndentation then lastIndentation: ""
+        unless thisIndentation ≈ lastIndentation · Indentation CHANGE
+          if thisIndentation.startsWith lastIndentation · start of block
+             indentations.add thisIndentation
+          else if lastIndentation.startsWith thisIndentation · end of block(s)
+            🔁﹖ indentations.size° > 0 and
+               ¬ thisIndentation.startsWith indentations.getLast°
+               indentations.removeLast°
+            if indentations.isEmpty°
+               indentations.add thisIndentation unless thisIndentation.isEmpty°
+            else
+               indentations.add thisIndentation unless ↵
+                                thisIndentation ≈ indentations.getLast°
+          else
+            tokens.add *Token Lex.ERR, thisIndentation ⊕ c ⊕
+               System.lineSeparator° ⊕ "^ INDENTATION MISMATCH ERROR"
+            return false
+        indentation.setLength 0
+        state: Lex.WSP
+        fallthrough
+
+      ⬩ WSP · Inline WhiteSpace
+        if c = '\n'
+           if ∄ stopInterpolation
+                unless tokens.isEmpty°
+                       lines.add *Line indentations.size°, tokens
+                indentation.setLength 0
+                tokens: *LinkedList⟨Token⟩°
+                state: Lex.IND
+           return true
+
+        return true if c.isWhitespace c
+
+        state: Lex.SYM
+        fallthrough
+
+      ⬩ SYM
+        prefix.append c
+        if The.symbols.containsKey prefix.toString°
+           if The.symbols.get prefix.toString° ≠ The.Symbol.PREFIX · real symbol found
+              symbol: prefix.toString°
+           return true
+        ⃫Check if the beginning of the prefix can be a name, longer than the symbol found
+        if c.isJavaIdentifierStart prefix.charAt 0
+           isName⦂ boolean: true
+           ∀ i ∈ 1 … prefix.length°
+             if ¬ c.isJavaIdentifierPart prefix.charAt i
+             and (∄ symbol or i ≤ symbol.length°)
+                 isName: false
+           if isName
+              state: Lex.NAM
+              recycle⦂ String: prefix.toString°
+              symbol: null
+              prefix.setLength 0
+              return analyse recycle
+        if ∃ symbol
+           recycle⦂ String
+           if The.symbols.get symbol = The.Symbol.ALIAS
+              recycle: (The.aliases.get symbol) ⊕
+                       (prefix.substring symbol.length°)
+           else
+              consume symbol
+              recycle: prefix.substring symbol.length°
+           symbol: null
+           prefix.setLength 0
+           return analyse recycle
+        if c.isJavaIdentifierStart prefix.charAt 0
+           prefixTail⦂ String: prefix.substring 1
+           prefix.setLength 1
+           state: Lex.NAM
+           return analyse prefixTail
+        if c.isDigit prefix.charAt 0
+           state: Lex.NUM
+           dfa.(get state).reset null
+           prefixTail⦂ String: prefix.toString°
+           prefix.setLength 0
+           return analyse prefixTail
+        tokens.add *Token Lex.SYM, prefix.substring 0, 1
+        prefixTail⦂ String: prefix.substring 1
+        prefix.setLength 0
+        state: Lex.WSP
+        return analyse prefixTail
+
+      ⬩ NAM
+        if c.isJavaIdentifierPart c
+           prefix.append c
+           return true
+        tokens.add *Token Lex.NAM, prefix.toString°
+        prefix.setLength 0
+        state: Lex.WSP
+        return consume c
+
+      ⃫complex delimited sequences
+      ⬩ NUM, CHR, STR, TXT
+        unless dfa.(get state).consume c
+          tokens.addAll dfa.(get state).getTokens°
+          state: Lex.WSP
+          return consume c
+        return true
+
+      ⃫simple delimited sequences
+      ⬩ BLC, COD, COM, REG, REB
+        candidate⦂ String: ∃ symbol ? symbol ⊕ c ! c.toString°
+        if closingDelimiter.startsWith candidate
+           if closingDelimiter ≈ candidate
+              if state ≠ Lex.BLC · drop block comments
+                 tokens.add *Token (state = Lex.REB ? Lex.REG ! state),
+                                    prefix.toString°.trim°
+              prefix.setLength 0
+              symbol: null
+              ∢ state
+                ⬩ COM
+                  lines.add *Line indentations.size°, tokens
+                  indentation.setLength 0
+                  tokens: *LinkedList⟨Token⟩°
+                  state: Lex.IND
+                ⬩ REG, REB
+                  state: Lex.FLG
+                ‼ state: Lex.WSP
+              return true
+          symbol: candidate
+        else
+          if state = Lex.REB and c = '\n'
+            regLines⦂ String[]: prefix.toString°.split "\n"
+            ∀ openingDelimiter ∈ The.delimitedSequences.keySet° ⦂ String
+              if "LineComment" ≈ The.delimitedSequences.get openingDelimiter
+                 regExps⦂ String[]: regLines[regLines.length - 1].split openingDelimiter
+                 if regExps.length > 1
+                    if regLines.length < 2 · first line: promote comment
+                       lineComment⦂ LinkedList⟨Token⟩°
+                       lineComment.add *Token Lex.COM, regExps[1]
+                       lines.add *Line indentations.size°, lineComment
+                       prefix.setLength 0
+                       prefix.append "\n"
+                    else · remove comment from prefix and line
+                       prefix.setLength prefix.length() -
+                               regLines[regLines.length - 1].length°
+                       regLines[regLines.length - 1]: regExps[0]
+            if regLines.length > 2
+               prefix.setLength prefix.length° - 1 · remove '\n'
+               prefix.append "|"
+            if regLines.length > 1
+               prefix.(append regLines[regLines.length - 1].trim° ⨭ "\n")
+          else
+            prefix.append candidate
+          symbol: null
+        return true
+
+      ⬩ FLG · Regular Parser Flags
+        ∢ c
+          ⬩ 'g', 'i', 'm', 'u', 'y'
+            if 0 > prefix.indexOf String.valueOf c
+               prefix.append c
+               return true
+        if c.isLetterOrDigit c
+           tokens.add *Token Lex.ERR, prefix.toString° ⊕ c ⊕
+                      " < INVALID REGULAR EXPRESSION FLAG"
+           prefix.setLength 0
+           state: Lex.WSP
+        else
+           tokens.add *Token Lex.FLG, prefix.toString°
+           prefix.setLength 0
+           state: Lex.WSP
+           return consume c
+
+        return true
+
+      else return false · IPE, ERR
+
+  ▶ getTokens⦂ LinkedList⟨Token⟩
+    return tokens
+
+  ▶ appendBack ⏺ i⦂ int · append line #i to the previous line
+    🔁﹖ lines.(get ◣i).tokens.getFirst°.name = Lex.COM · drop previous comment line
+       lines.remove i
+    if lines.(get i).tokens.getLast°.name = Lex.COM · drop line comment
+       lines.(get i).tokens.removeLast°
+    lines.(get i).tokens.addAll lines.(get i + 1).tokens
+    lines.remove i + 1
+    ⃫reduce double indentations underneath
+    ∀ j ∈ i + 1 … lines.size°
+      if lines.(get j).indentation > lines.(get i).indentation + 1
+         lines.(get j).indentation◢
+      else break
+
+  ▶ appender⦂ boolean · true if argument cannot end a line
+  ⏺ token⦂ Token
+    ⏎ token.name = Lex.BEG
+    ∨ lineBreaker token
+    ∨ token ≈ Lex.KEY, "if"
+    ∨ token ≈ Lex.KEY, "then"
+    ∨ token ≈ Lex.KEY, "word wrap"
+
+  ▶ lineBreaker⦂ boolean · true if argument cannot start or end a line
+  ⏺ token⦂ Token
+    ⏎ token ≈ Lex.KEY, "assign"
+    ∨ token.name = Lex.OPR
+    ∧ ¬ token.value ≈ "Invocation"
+    ∧ ¬ token.value ≈ "PostIncrement"
+    ∧ ¬ token.value ≈ "PostDecrement"
+
+  ▶ getLines⦂ LinkedList⟨Line⟩
+    token⦂ Token
+    ⃫Restore parameter lines before completing sections
+    ∀ i ∈ 1 … lines.size°
+      if lines.(get i).tokens.getFirst° ≈ Lex.KEY, "parameter"
+         appendBack i◢
+    ⃫Complete sections
+    ∀ i ∈ 0 … lines.size°
+      if lines.(get i).tokens.getFirst° ≈ Lex.KEY, "section"
+         lines.(get i).tokens.removeFirst°
+         if lines.(get i).tokens.getLast°.name = Lex.COM · drop comment
+            lines.(get i).tokens.removeLast°
+         ∀ j ∈ i + 1 … lines.size°
+           break if lines.(get j).indentation ≤ lines.(get i).indentation
+           if lines.(get j).indentation = lines.(get i).indentation + 1
+           and lines.(get j).tokens.getFirst°.name ≠ Lex.COM
+               lines.(get j).tokens.addAll (
+                 if lines.(get j).tokens.getFirst° ≈ Lex.KEY, "section"
+                 then 1 · subsection
+                 else 0), lines.(get i).tokens
+           lines.(get j).indentation◢
+         lines.remove i◢
+    ⃫Restore literal arrays
+    l⦂ int: 0 · line index
+    🏷 walkLines
+    🔁﹖ l < lines.size°
+        ⃫Find "array" token
+        t⦂ int: ‐1 · token index
+        🔁﹖ ◤t < lines.(get l).tokens.size°
+            break if lines.(get l).tokens.(get t) ≈ Lex.KEY, "array"
+        if t < lines.(get l).tokens.size° · array found
+           🏷 walkArray
+           🔁﹖ l + 1 < lines.size°
+           and lines.(get l + 1).indentation > lines.(get l).indentation
+               if lines.(get l + 1).tokens.getFirst° ≈ Lex.KEY, "array"
+                  l◥
+                  continue walkLines
+               else
+                  if lines.(get l).tokens.getLast°.name = Lex.COM
+                     lines.(get l).tokens.removeLast°
+                  unless lines.(get l).tokens.getLast° ≈ Lex.OPR, "ListSeparator"
+                     lines.(get l).tokens.add *Token Lex.OPR, "ListSeparator"
+                  lines.(get l).tokens.addAll lines.(get l + 1).tokens
+                  lines.remove l + 1
+                  continue walkArray
+           lines.(get l).tokens.set t, *Token Lex.BEG, "Array"
+           lines.(get l).tokens.add *Token Lex.END, "Array"
+           if t = 0 ∧ l > 0
+            ∧ lines.(get l - 1).indentation < lines.(get l).indentation
+              if lines.(get ◣l).tokens.getLast°.name = Lex.COM
+                 lines.(get l).tokens.removeLast°
+              unless lines.(get l).tokens.getLast° ≈ Lex.OPR, "ListSeparator"
+                 lines.(get l).tokens.add *Token Lex.OPR, "ListSeparator"
+              lines.(get l).tokens.addAll lines.(get l + 1).tokens
+              lines.remove l + 1
+        else l◥
+    ⃫Restore logical lines
+    ∀ i ∈ 0 … lines.size°
+        ⃫backward
+        token: lines.(get i).tokens.getFirst°
+        if token.name = Lex.END or lineBreaker token
+           appendBack i◢
+        continue if token.name = Lex.COM
+        ⃫forward
+        token: lines.(get i).tokens.removeLast°
+        🔁﹖ i + 1 < lines.size()
+        and (appender token
+             ∨ token.name = Lex.COM ∧ appender lines.(get i).tokens.getLast°
+             ∨ lines.(get i + 1).indentation > lines.(get i).indentation
+             ∧ (lines.(get i + 1).tokens.getFirst° ≈ Lex.KEY, "then" ∨
+                lines.(get i + 1).tokens.getFirst° ≈ Lex.KEY, "else")
+            )
+            if lines.(get i).tokens.getLast° ≈ Lex.KEY, "word wrap"
+               lines.(get i).tokens.removeLast°
+            if token.name ≠ Lex.COM ∧ ¬token ≈ Lex.KEY, "word wrap"
+               lines.(get i).tokens.add token
+            lines.(get i).tokens.addAll lines.(get i + 1).tokens
+            lines.remove i + 1
+            ⃫reduce double indentations underneath
+            ∀ j ∈ i + 1 … lines.size°
+              break if lines.(get j).indentation ≤ lines.(get i).indentation + 1
+              lines.(get j).indentation◢
+            token: lines.(get i).tokens.removeLast°
+        lines.(get i).tokens.add token
+    ⃫Restore ternary expressions, resolve unless and until
+    token: *Token Lex.KEY, "else"
+    ∀ i ∈ 0 … lines.size°
+      t⦂ int
+      🔁﹖ 0 < lines.(get i).tokens.indexOf token · inline "else"
+          t: lines.(get i).tokens.indexOf token
+          lines.(get i).tokens.set t, *Token Lex.OPR, "TernaryFalse"
+          🔁﹗ lines.(get i).tokens.(get ◣t) ≈ Lex.KEY, "then"
+            · find "then"
+          lines.(get i).tokens.set t, *Token Lex.OPR, "TernaryTrue"
+          🔁﹗ lines.(get i).tokens.(get ◣t) ≈ Lex.KEY, "if"
+            · find "if"
+          lines.(get i).tokens.remove t
+      t: lines.(get i).tokens.indexOf *Token Lex.KEY, "until"
+      if 0 ≤ t
+      or 0 ≤ lines.(get i).tokens.indexOf *Token Lex.KEY, "unless"
+         if t < 0 · "unless"
+            t: lines.(get i).tokens.indexOf *Token Lex.KEY, "unless"
+            lines.(get i).tokens.set t, *Token Lex.KEY, "if"
+         else · "until"
+            lines.(get i).tokens.set t, *Token Lex.KEY, "while"
+         lines.(get i).tokens.add t + 1, *Token Lex.OPR, "Not"
+         lines.(get i).tokens.add t + 2, *Token Lex.BEG, "Expression"
+         if lines.(get i).tokens.getLast°.name = Lex.COM
+            lines.(get i).tokens.add lines.(get i).tokens.size° - 1,
+                         *Token Lex.END, "Expression"
+         else
+            lines.(get i).tokens.add *Token Lex.END, "Expression"
+    ⏎ lines
+
+  ▶ consume ⏺ symbol⦂ String · assert symbol ≠ null
+    if symbol ≈ stopInterpolation
+       state: Lex.ERR
+       return
+    state: Lex.WSP · default state after lexical elements
+    ∢ The.symbols.get symbol
+      ⬩ DELIMITER
+        ∢ The.delimitedSequences.get symbol
+          ⬩ "LineComment"       ⭆ state: Lex.COM
+          ⬩ "BlockComment"      ⭆ state: Lex.BLC
+          ⬩ "EmbeddedCode"      ⭆ state: Lex.COD
+          ⬩ "RegularExpression" ⭆ state: Lex.REG
+          ⬩ "RegularBlock"      ⭆ state: Lex.REB
+          ⬩ "Character"         ⭆ state: Lex.CHR
+          ⬩ "String"            ⭆ state: Lex.STR
+          ⬩ "Text"              ⭆ state: Lex.TXT
+          ‼ state: Lex.WSP
+
+        ∢ The.delimitedSequences.get symbol
+          ⬩ "LineComment", "BlockComment", "EmbeddedCode",
+            "RegularExpression", "RegularBlock"
+            closingDelimiter: The.closingDelimiters.get symbol
+
+          ⬩ "Character", "String", "Text"
+            dfa.(get state).reset symbol
+
+          ⬩ "TypeList"
+            if symbol ≈ closingDelimiter · shrink type reference into a name
+               typeName⦂ StringBuilder ">"
+               token⦂ Token: tokens.removeLast°
+               🔁﹗ token.name = Lex.BEG
+                   typeName.insert 0, (token.name = Lex.OPR ? "," ! token.value)
+                   token: tokens.removeLast°
+               tokens.add *Token Lex.NAM, tokens.removeLast°.value
+                                 ⊕ "<" ⊕  typeName
+            else
+               closingDelimiter: The.closingDelimiters.get symbol
+               tokens.add *Token Lex.BEG, "TypeList"
+
+          ⬩ "Array", "Expression"
+            tokens.add *Token (if The.closingDelimiters.containsKey symbol
+                               then Lex.BEG
+                               else Lex.END),
+                              The.delimitedSequences.get symbol
+
+          ‼ tokens.add *Token Lex.ERR, symbol ⊕ " < UNKNOWN DELIMITER"
+
+      ⬩ OPERATOR
+        tokens.add *Token Lex.OPR, The.operators.get symbol
+
+      ⬩ KEYWORD
+        tokens.add *Token Lex.KEY, The.keywords.get symbol
+
+      ⬩ EXPLETIVE
+        · drop expletive
+
+      ⬩ EMBEDDED_CODE
+        tokens.add *Token Lex.COD, symbol
+
+      ⬩ RESERVED_WORD
+        tokens.add *Token Lex.ERR, symbol ⊕ " < RESERVED WORD"
+
+      ‼ tokens.add *Token Lex.ERR, symbol ⊕ " < UNKNOWN SYMBOL"

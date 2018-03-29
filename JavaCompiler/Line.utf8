@@ -11,7 +11,8 @@ import java.util.LinkedList
     @tokens: ∃ tokens ? tokens ! *LinkedList⟨Token⟩°
 
   ▶ toString⦂ String
-    result⦂ StringBuilder (*String *char[indentation]).replace "\u0000", "\t"
+    result⦂ StringBuilder ↵
+          (*String *char[indentation]).replace "\u0000", "\t"
     result.(append "[IND " ⨭ indentation ⨭ "]")
     ∀ token ∈ tokens⦂ Token
       result.append token

@@ -4,7 +4,7 @@
 
   ▶ new
   ⏺ name⦂ Head
-    @ name, "}"
+    this name, "}"
 
   ▶ new
   ⏺ name⦂ Head

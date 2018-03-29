@@ -51,7 +51,8 @@ import java.util.LinkedList
         value.append c
         ∢ c
           ⬩ 'u' ⭆ state: State.US
-          ⬩ 'b', 't', 'n', 'f', 'r', ‵'′, ‵"′, '\\' ⭆ state: State.WC
+          ⬩ 'b', 't', 'n', 'f',
+            'r', ‵'′, ‵"′, '\\' ⭆ state: State.WC
           else
             state: State.ER
             return false
