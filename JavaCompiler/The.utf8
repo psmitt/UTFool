@@ -7,7 +7,7 @@ import java.util.HashSet
 import java.util.Set
 
 ■ The
-  ≣ Symbol
+  ≣ Symbol · Lexical Categories
     DELIMITER
     OPERATOR
     KEYWORD
@@ -31,7 +31,7 @@ import java.util.Set
       leftAssociatives⦂ HashSet⟨String⟩°          · left associative operations
 
       keywords⦂         HashMap⟨String, String⟩°      · symbol -> ultimate non-terminal syntactic unit
-      aliases⦂          HashMap⟨String, String⟩°      · symbol -> code replacement (e.g. name or reference)
+      aliases⦂          HashMap⟨String, String⟩°      · symbol -> code replacement
       embeddedCode⦂     HashMap⟨String, Set⟨String⟩⟩° · language name -> embedded code
       expletives⦂       HashSet⟨String⟩°              · symbols to drop
       reservedWords⦂    HashMap⟨String, Set⟨String⟩⟩° · language name -> reserved words
@@ -39,9 +39,8 @@ import java.util.Set
     ▶ collisionError
     ⏺ symbol⦂ String
     ⏺ category⦂ Symbol
-      System.err.println "
-        Collision of Symbols (⸨category.name°⸩ vs.
-        ⸨(symbols.get symbol).name°⸩): ⸨symbol⸩"
+      System.err.println "Collision of Symbols
+        (⸨category.name°⸩ vs. ⸨(symbols.get symbol).name°⸩): ⸨symbol⸩"
       System.exit 1
 
     ▶ registerSymbol
@@ -64,7 +63,7 @@ import java.util.Set
         or symbols.get completeSequence = Symbol.PREFIX
            symbols.put completeSequence, category
 
-      ⃫register prefixes
+      ⃫Register prefixes:
       symbol.setLength symbol.length° - 1
       🔁﹖ symbol.length° > 0 and ¬ symbols.containsKey symbol.toString°
           symbols.put symbol.toString°, Symbol.PREFIX
@@ -72,9 +71,9 @@ import java.util.Set
 
   static · initializer block
     try
-        baseDirectory⦂ Path: Paths.get "."
+        root⦂ Path: Paths.get "."
 
-        ∀ line ∈ Files.readAllLines Paths.get baseDirectory.toString°, "delimiters.tsv" ⦂ String
+        ∀ line ∈ Files.readAllLines Paths.get root.toString°, "delimiters.tsv" ⦂ String
           delimiters⦂ String[]: line.trim°.split "\\s*\\t+\\s*"
           if delimiters.length > 1 · not an empty line
              registerSymbol *(StringBuilder delimiters[0]), Symbol.DELIMITER
@@ -92,10 +91,9 @@ import java.util.Set
                  delimitedSequences.put delimiters[2], delimiters[1]
 
         precedence⦂ Integer: 0
-        ∀ line ∈ Files.readAllLines Paths.get baseDirectory.toString°, "operators.tsv" ⦂ String
+        ∀ line ∈ Files.readAllLines Paths.get root.toString°, "operators.tsv" ⦂ String
           operator⦂ String[]: line.trim°.split "\\s*\\t+\\s*"
-          if operator.length ≤ 1 · empty line
-             precedence◥
+          if  operator.length ≤ 1 then precedence◥ · empty line
           else
               registerSymbol *(StringBuilder operator[0]), Symbol.OPERATOR
               operators.put operator[0], operator[1]
@@ -111,19 +109,19 @@ import java.util.Set
                  precedences.put "FunctionCall", precedence
                  arities.put "FunctionCall", 2
 
-        ∀ line ∈ Files.readAllLines Paths.get baseDirectory.toString°, "keywords.tsv" ⦂ String
+        ∀ line ∈ Files.readAllLines Paths.get root.toString°, "keywords.tsv" ⦂ String
           words⦂ String[]: line.trim°.split "\\s*\\t+\\s*"
           if words.length > 1 · not an empty line
              registerSymbol *(StringBuilder words[0]), Symbol.KEYWORD
              keywords.put words[0], words[1]
 
-        ∀ line ∈ Files.readAllLines Paths.get baseDirectory.toString°, "aliases.tsv" ⦂ String
+        ∀ line ∈ Files.readAllLines Paths.get root.toString°, "aliases.tsv" ⦂ String
           alias⦂ String[]: line.trim°.split "\\s*\\t+\\s*"
           if alias.length > 1 · not an empty line
              registerSymbol *(StringBuilder alias[0]), Symbol.ALIAS
              aliases.put alias[0], alias[1]
 
-        ∀ entry ∈ Files.newDirectoryStream baseDirectory, "embedded_code_*.tsv" ⦂ Path
+        ∀ entry ∈ Files.newDirectoryStream root, "embedded_code_*.tsv" ⦂ Path
           fileName⦂ String: entry.getFileName().toString°
           languageName⦂ String: fileName.(substring "embedded_code_".length°, fileName.length° - 4).trim°
           embeddedCode.put languageName, *HashSet⟨String⟩°
@@ -131,12 +129,12 @@ import java.util.Set
             registerSymbol *(StringBuilder line), Symbol.EMBEDDED_CODE
             embeddedCode.(get languageName).add line
 
-        ∀ line ∈ Files.readAllLines Paths.get baseDirectory.toString°, "expletives.tsv" ⦂ String
+        ∀ line ∈ Files.readAllLines Paths.get root.toString°, "expletives.tsv" ⦂ String
           expletive⦂ String: line.trim°
           registerSymbol *(StringBuilder expletive), Symbol.EXPLETIVE
           expletives.add expletive
 
-        ∀ entry ∈ Files.newDirectoryStream baseDirectory, "reserved_words_*.tsv" ⦂ Path
+        ∀ entry ∈ Files.newDirectoryStream root, "reserved_words_*.tsv" ⦂ Path
           fileName⦂ String: entry.getFileName().toString°
           languageName⦂ String: fileName.(substring "reserved_words_".length°, fileName.length° - 4).trim°
           reservedWords.put languageName, *HashSet⟨String⟩°

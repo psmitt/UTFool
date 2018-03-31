@@ -1,0 +1,673 @@
+import java.util.LinkedList
+
+■ JavaCompiler
+
+  lines⦂ LinkedList⟨String⟩° · output
+  result⦂ StringBuilder° · current compilation fragment
+  blocks⦂ LinkedList⟨Block⟩° · block stack
+
+  ▶ TAB⦂ String ⏺ i⦂ int
+    ⏎ *(String *char[i]).replace "\u0000", "\t"
+
+  ▶ reduceBlocks
+    block⦂ Block: blocks.removeLast°
+    ∢ block.name
+      ⬩ CLASS, SELECTION
+        lines.add (TAB blocks.size°) ⊕ "}"
+      ⬩ CASE
+        unless block.value ≈ "nobreak"
+          lines.add (TAB blocks.size° + 1) ⊕ "break;"
+        lines.add (TAB blocks.size°) ⊕ "}"
+      ‼ lines.add (TAB blocks.size°) ⊕ block.value
+
+  parser⦂ Parser° · for Expressions
+  line⦂ Line · to compile
+  limit⦂ int · number of tokens in line
+
+  ▶ token⦂ Token ⏺ i⦂ int
+    ⏎ i < limit ? line.tokens.get i ! null
+
+  type⦂ StringBuilder° · Name, ClassName, TypeName, Type
+
+  ▶ getType⦂ int
+  ⏺ i⦂ int · points to TypeSign before TypeName
+    type.setLength 0
+    type.append (token ◤i).value
+    i◥
+    🔁﹖ (token i) ?≈ Lex.OPR, "Access"
+        type.(append "." ⨭ (token ◤i).value)
+        i◥
+    🔁﹖ (token i) ?≈ Lex.BEG, "Array"
+        type.append "["
+        unless (token ◤i) ≈ Lex.END, "Array" · fixed length array
+               i: parser.reset°.parse line, i
+               type.append compile parser.getExpression°
+        else i◥ · step over closing delimiter
+        type.append "]"
+    return i
+
+  ▶ addType⦂ int ⏺ i⦂ int
+    t⦂ int: getType i
+    result.append type
+    return t
+
+  variable⦂ StringBuilder°
+
+  ▶ getVariable⦂ int
+  ⏺ i⦂ int · points to variable name
+    name⦂ String: (token i).value
+    i: getType i + 1
+    variable.setLength 0
+    variable.(append type.toString°.replaceAll "\\[[^\\]]*\\]", "[]"
+              ⨭ " " ⨭ name)
+    if i ≥ limit ∨ (token i).name = Lex.COM
+       if type.toString°.matches ".*\\[.+\\].*" · fixed length array
+          variable.(append " = new " ⨭ type)
+       return i
+    if (token i) ≈ Lex.KEY, "assign"
+       variable.append " = "
+       isArray⦂ boolean: (token ◤i) ≈ Lex.BEG, "Array" · array initializer
+       i: parser.reset°.parse line, i
+       if isArray
+          variable.append (compile parser.getExpression°)
+                         .(replaceAll "\\[", "{").replaceAll "\\]", "}"
+       else
+          variable.append compile parser.getExpression°
+       return i
+    if (token i) ≈ Lex.OPR, "Invocation"
+       variable.(append " = new " ⨭ type ⨭ "()")
+       return i + 1
+    ⃫else assign constructor call with arguments
+    line.tokens.add i, *Token Lex.NAM, type.toString°
+    limit◥
+    i: parser.reset°.parse line, i
+    variable.(append " = new " ⨭ compile parser.getExpression°)
+    return i
+
+  ▶ compile⦂ boolean
+  ⏺ lexical⦂ Line
+    line:  lexical
+    limit: line.tokens.size°
+
+    if line.tokens.getFirst°.name = Lex.COM
+     ∧ line.indentation = lines.getLast°.(lastIndexOf '\t') + 1
+    ͞Head comment of a block, like this one
+       lines.add (TAB line.indentation) ⊕ "// "
+                  ⊕ line.tokens.getFirst°.value
+       return true
+
+    if blocks.size° < line.indentation · start of inner scope
+       lines.add (TAB blocks.size°) ⊕ "{"
+       blocks.add *Block Head.ANONYM
+
+    🔁﹖ blocks.size° > line.indentation · end of blocks
+        reduceBlocks°
+
+    ͞Start of line compilation
+    result.setLength 0
+    result.append TAB line.indentation
+
+    startOfBlock⦂ Boolean: null
+    i⦂ int: 0
+    🔁﹖ i < limit
+        ∢ (token i).name
+          ⬩ COD
+            result.append (token i◥).value
+            if i ≥ limit
+               lines.add result.toString°
+               return true
+            result.append " "
+            continue
+
+          ⬩ COM
+            if ∄ startOfBlock · comment line or line comment after COD
+                 result.(append "// " ⨭ (token i).value)
+                 lines.add result.toString°
+                 return true
+            ⃫comment line after else:
+            return endOfLine i, startOfBlock
+
+          ⬩ KEY
+            ∢ (token i).value
+              ⬩ "label"
+                result.(append (token ◤i).value ⨭ ":")
+                if ◤i < limit ∧ (token i).name = Lex.COM
+                   result.(append " // " ⨭ (token i).value)
+                lines.add result.toString°
+                return true
+
+              ⬩ "constants"
+                result.(append "enum " ⨭ (token ◤i).value)
+                blocks.add *Block Head.CONSTANTS
+                return endOfLine ◤i, true
+
+              ⬩ "interface"
+                result.append "public interface "
+                i: addType i · interface name
+                🔁﹗ endOfLine i, true · superinterfaces
+                   result.append ↵
+                     ((token i).name = Lex.OPR ? ", " ! " extends ")
+                   i: addType i
+                return true
+
+              ⬩ "class"
+                result.append "public class "
+                i: getType i · class name
+                result.append type
+                cname⦂ String[]: type.toString°.split "<", 2
+                blocks.add *Block Head.CLASS, cname[0] · constructor name
+                🔁﹗ endOfLine i, true · superclass and/or superinterfaces
+                   result.append (
+                     (token i).name = Lex.OPR ? ", " !
+                     (token i).value ≈ "super" ? " extends " !
+                                                 " implements ")
+                   i: addType i
+                return true
+
+              ⬩ "function"
+                result.append "public "
+                name⦂ String: (token ◤i).value
+                i◥
+                if name ≈ "constructor" · replace with class name
+                   result.append blocks.getLast°.value
+                else
+                   if (token i) ?≈ Lex.KEY, "as"
+                      i: addType i
+                      result.append " "
+                   else
+                      result.append "void "
+                   result.append name
+                thrownType⦂ StringBuilder: null
+                if (token i) ?≈ Lex.KEY, "throw"
+                   i: getType i
+                   thrownType: *StringBuilder type
+                   🔁﹖ (token i) ?≈ Lex.OPR, "ListSeparator"
+                       i: getType i
+                       thrownType.(append ", " ⨭ type)
+                result.append "("
+                parameterList⦂ boolean: false
+                🔁﹖ (token i) ?≈ Lex.KEY, "parameter"
+                    result.append ", " if parameterList
+                    parameterList: true
+                    name: (token ◤i).value
+                    i: addType ◤i
+                    result.(append " " ⨭ name)
+                result.append ")"
+                result.(append " throws " ⨭ thrownType) if ∃ thrownType
+                return endOfLine i, ¬(token 0) ≈ Lex.COD, "abstract"
+
+              ⬩ "iterate"
+                if ◤i ≥ limit ∨ (token i).name = Lex.COM
+                   result.append "do"
+                   return endOfLine i, true
+                unless (token i) ≈ Lex.KEY, "while"
+                    or (token i) ≈ Lex.KEY, "until"
+
+                    ⃫For-loop:
+                    isMap⦂ boolean: false
+                    firstParameter⦂ String: (token i).value
+                    secondParameter⦂ String: null
+                    if (token ◤i) ≈ Lex.KEY, "by" · loop counter
+                        secondParameter: (token ◤i).value
+                        i◥ · points to "in"
+                    if (token i) ≈ Lex.KEY, "of"
+                        isMap: true
+                        if (token i + 2) ?≈ Lex.KEY, "in" · Value, Key in Map
+                            secondParameter: (token ◤i).value
+                            i◥ · points to "in"
+                    isArray⦂ int: (token ◤i) ≈ Lex.BEG, "Array" ? 1 ! 0
+                    i: parser.reset°.parse line, i + isArray
+                    expression⦂ String: compile parser.getExpression°
+
+                    ⃫.forEach unless Map with String key:
+                    if  (i ≥ limit ∨ (token i).name = Lex.COM)
+                    and (¬ isMap ∨ ∃ secondParameter)
+                        result.(append "(" ⨭ expression ⨭ ").forEach(")
+                        if ∃ secondParameter · second is the key/index
+                            result.(append "(" ⨭ secondParameter
+                                        ⨭ ", " ⨭ firstParameter ⨭ ")")
+                        else
+                            result.append firstParameter
+                        result.append " ->"
+                        blocks.add *Block Head.ANONYM, "});"
+                        return endOfLine i, true
+
+                    ⃫Range:
+                    if (token i) ?≈ Lex.KEY, "ellipsis"
+                        result.(append "for (int " ⨭ firstParameter
+                                ⨭ " = (int) " ⨭ expression ⨭ "; "
+                                ⨭ firstParameter)
+                        relation⦂ String: "Less"
+                        if (token ◤i).name = Lex.OPR
+                        and The.precedences.get (token i).value
+                          = The.precedences.get "Less" · relational operator
+                            relation: (token i◥).value
+                        operation⦂ String: "++" · default
+                        ∢ relation
+                          ⬩ "Equal", "Identical"
+                            result.append " == "
+                          ⬩ "Greater"
+                            result.append " > "
+                            operation: "--"
+                          ⬩ "GreaterEqual"
+                            result.append " >= "
+                            operation: "--"
+                          ⬩ "Less"
+                            result.append " < "
+                          ⬩ "LessEqual"
+                            result.append " <= "
+                          ⬩ "NotEqual", "NotIdentical"
+                            result.append " != "
+                        i: parser.reset°.parse line, i · end limit
+                        result.(append compile parser.getExpression°
+                                ⨭ "; " ⨭ firstParameter)
+                        if (token i) ?≈ Lex.KEY, "by"
+                            binary⦂ String
+                            if (token ◤i).name = Lex.OPR
+                                binary: compoundAssignment (token i).value
+                                if ∄ binary
+                                     binary: " = "
+                                     line.tokens.add i,
+                                          *Token Lex.NAM, firstParameter
+                                     limit◥
+                            else
+                                binary: operation ≈ "--" ? " -= " ! " += "
+                            i: parser.reset°.parse line, i · step
+                            result.(append binary
+                                    ⨭ compile parser.getExpression°)
+                        else
+                            result.append operation
+                        result.append ")"
+                        return endOfLine i, true
+
+                    keyType⦂ String: "String" · default key type of Maps
+                    itemType⦂ String: null
+                    if (token i) ?≈ Lex.KEY, "as"
+                        i: getType i
+                        itemType: type.toString°
+                        if ∄ secondParameter
+                             keyType: itemType
+                        else if (token i) ?≈ Lex.OPR, "ListSeparator"
+                             i: getType i
+                             keyType: type.toString°
+
+                    if isMap
+                       result.(append "for (" ⨭ keyType ⨭ " "
+                               ⨭ (secondParameter ⁈ firstParameter)
+                               ⨭ " : (" ⨭ expression ⨭ ").getKeys())")
+                       return endOfLine i, true if ∄ secondParameter
+                       blocks.add *Block Head.ANONYM
+                       result.append " {"
+                       if i < limit ∧ (token i).name = Lex.COM
+                          result.(append " // " ⨭ (token i).value)
+                       result.(append System.lineSeparator°
+                            ⨭ (TAB line.indentation + 1) ⨭ itemType
+                            ⨭ " " ⨭ firstParameter ⨭ " = (" ⨭ expression
+                            ⨭ ").get(" ⨭ secondParameter ⨭ ");")
+                       lines.add result.toString°
+                       return true
+                    else · Iterable Collection
+                       if ∃ secondParameter · Item Index
+                            result.(append "{int " ⨭ secondParameter
+                                    ⨭ " = 0;" ⨭ System.lineSeparator°
+                                    ⨭ (TAB line.indentation))
+                       result.(append "for (" ⨭ itemType ⨭ " "
+                               ⨭ firstParameter ⨭ " : ")
+                       if isArray = 1
+                          result.(append "new " ⨭ itemType ⨭ "[]{"
+                                ⨭ compile parser.getExpression° ⨭ "})")
+                       else
+                          result.(append compile parser.getExpression°
+                                  ⨭ ")")
+                       if ∃ secondParameter · increment Index
+                          blocks.add *Block Head.ANONYM,
+                                     "\t" ⊕ secondParameter ⊕ "++;"
+                                     ⊕ System.lineSeparator()
+                                     ⊕ (TAB line.indentation) ⊕ "}}"
+                       return endOfLine i, true
+
+                fallthrough · while or until
+
+              ⬩ "if"
+                if ¬ blocks.isEmpty°
+                   ∧ blocks.getLast°.name = Head.SELECTION
+                     blocks.add *Block Head.CASE
+                     i: parser.reset°.parse line, ◤i
+                     ∀ value ∈ (compile parser.getExpression°)
+                                 .split ", " ⦂ String
+                       lines.add *(StringBuilder TAB line.indentation)
+                                 .(append "case " ⨭ value ⨭ ":").toString°
+                    result: *(StringBuilder lines.removeLast°)
+                    if (token i) ?≈ Lex.KEY, "then"
+                        result.append " { "
+                        i◥
+                        continue
+                    return endOfLine i, true
+
+                fallthrough
+
+              ⬩ "while", "until", "select"
+                if (token i).value ≈ "select"
+                    blocks.add *Block Head.SELECTION
+                    result.append "switch ("
+                else
+                    result.(append (token i).value ⨭ " (")
+                i: parser.reset°.parse line, ◤i
+                result.(append compile parser.getExpression° ⨭ ")")
+                if (token i) ?≈ Lex.KEY, "then"
+                    result.append " "
+                    i◥
+                    continue
+                return endOfLine i, ¬(token 0).value ≈ "while"
+
+              ⬩ "else"
+                startOfBlock: true
+                if ¬ blocks.isEmpty° ∧ blocks.getLast°.name = Head.SELECTION
+                     result.append "default: "
+                else result.append "else "
+                return true if endOfLine ◤i, true
+                continue
+
+              ⬩ "try"
+                result.append "try "
+                return true if endOfLine ◤i, true
+                ⃫try-with-resources:
+                result.append "(")
+                🔁﹖ (token i) ?≈ Lex.KEY, "parameter"
+                    i: getVariable ◤i
+                    result.(append System.lineSeparator°
+                         ⨭ (TAB line.indentation + 1)
+                         ⨭ (variable.toString°.replace "(\u0001)", "")
+                         ⨭ ";")
+                result.(append System.lineSeparator°
+                     ⨭ (TAB line.indentation + 1) ⨭ ")")
+                return endOfLine i, true
+
+              ⬩ "catch"
+                result.append "catch "
+                return true if endOfLine ◤i, true
+                result.append "("
+                name⦂ String: (token i).value
+                i: addType ◤i
+                result.(append " " ⨭ name ⨭ ")")
+                return endOfLine i, true
+
+              ⬩ "finally"
+                result.append "finally"
+                return endOfLine ◤i, true
+
+              ⬩ "fallthrough"
+                result.append "// "
+                fallthrough
+
+              ‼ · other control transfer statements
+                result.append (token i).value
+                if ◤i < limit and (token i).name ≠ Lex.COM
+                   unless (token i).name = Lex.KEY · target expression
+                      i: parser.reset°.parse line, i
+                      result.(append " " ⨭ compile parser.getExpression°)
+                   if (token i) ?≈ Lex.KEY, "if" · conditional statement
+                      i: parser.reset°.parse line, i + 1
+                      realResult⦂ StringBuilder TAB line.indentation
+                      realResult.(append "if ("
+                                  ⨭ compile parser.getExpression°
+                                  ⨭ ") " ⨭ result.toString°.trim°)
+                      result: realResult
+                if ¬blocks.isEmpty°
+                and blocks.getLast°.name = Head.CASE
+                and ¬ result.toString°.trim°.startsWith "if"
+                and ¬ result.toString°.trim°.startsWith "else"
+                    blocks.removeLast°
+                    blocks.add *Block Head.CASE, "nobreak"
+                return endOfLine i, false
+
+            fallthrough · to avoid unreachable break
+
+          ⬩ OPR
+            if (token i) ≈ Lex.OPR, "Invocation"
+            ⃫Call of anonymous function or method of anonymous class:
+                result: *StringBuilder lines.removeLast°
+                                            .replaceFirst "..$", ""
+                if ◤i ≥ limit ∨ (token i).name = Lex.COM
+                   result.append "())"
+                   return endOfLine i, false
+                unless (token i) ≈ Lex.OPR, "Access"
+                       ⃫argumentlist of anonymous function
+                       i: parser.reset°.parse line, i
+                    result.(append "(" ⨭ compile parser.getExpression°
+                                       ⨭ "))")
+                    return endOfLine i, false
+                ⃫Call method of anonymous class
+                result.append "."
+                i◥ · points to method name
+
+            fallthrough
+
+          ⬩ NAM · constant, variable, function, assignments
+            if i = 0
+             ∧ ¬ blocks.isEmpty°
+             ∧ blocks.getLast°.name = Head.CONSTANTS · enum constant
+               i: parser.reset°.parse line, i
+               result.(append compile parser.getExpression° ⨭ ",")
+               if i < limit ∧ (token i).name = Lex.COM
+                  result.(append " // " ⨭ (token i).value)
+               lines.add result.toString°
+               return true
+            if (token i + 1) ?≈ Lex.KEY, "as" · variable definition
+               i: getVariable i
+               result.append variable
+               return endOfLine i, false
+
+            ⃫Reference:
+            i: parser.reset°.parse line, i
+            reference⦂ String: compile parser.getExpression°
+            result.append reference
+            if (token 0) ≈ Lex.OPR, "Invocation" · anonymous function call
+                result.append ")"
+            if (token i) ?≈ Lex.KEY, "if" · conditional statement
+                i: parser.reset°.parse line, i + 1
+                realResult⦂ StringBuilder TAB line.indentation
+                realResult.(append "if (" ⨭ compile parser.getExpression°
+                            ⨭ ") " ⨭ result.toString°.trim°)
+                result: realResult
+            return true if endOfLine i, false
+            · function call, increment/decrement, COD + reference
+
+            ⃫Assignments:
+            unless parser.operatorStack.isEmpty°
+              if (token i - 1) ≈ Lex.OPR, "TernaryTrue" · existential
+                  result.insert 0, "if (null == "
+                  result.(append ") " ⨭ reference ⨭ " = ")
+              else · compound assignment
+                  operator⦂ String: compoundAssignment ↵
+                                    parser.operatorStack.getLast°.value
+                  if ∃ operator then result.append operator
+                  else
+                      i: parser.parse line, i + 1
+                      result.(append " = " ⨭ compile parser.getExpression°)
+                      return endOfLine i, false
+            else result.append " = "
+            i: parser.reset°.parse line, i + 1
+            result.append compile parser.getExpression°
+            if (token i) ?≈ Lex.KEY, "if" · conditional statement
+                i: parser.reset°.parse line, i + 1
+                realResult⦂ StringBuilder TAB line.indentation
+                realResult.(append "if (" ⨭ compile parser.getExpression°
+                            ⨭ ") " ⨭ result.toString°.trim°)
+                result: realResult
+            return endOfLine i, false
+    return true
+
+  ▶ compoundAssignment⦂ String
+  ⏺ operator⦂ String
+    ∢ operator
+      ⬩ "Addition"       ⭆ ⏎ " += "
+      ⬩ "BitAnd"         ⭆ ⏎ " &= "
+      ⬩ "BitOr"          ⭆ ⏎ " |= "
+      ⬩ "BitXor"         ⭆ ⏎ " ^= "
+      ⬩ "Concatenation"  ⭆ ⏎ " += "
+      ⬩ "Division"       ⭆ ⏎ " /= "
+      ⬩ "Multiplication" ⭆ ⏎ " *= "
+      ⬩ "Quotient"       ⭆ ⏎ " /= "
+      ⬩ "ShiftLeft"      ⭆ ⏎ " <<= "
+      ⬩ "ShiftRight"     ⭆ ⏎ " >>= "
+      ⬩ "Subtraction"    ⭆ ⏎ " -= "
+      ‼ ⏎ null
+
+  ▶ endOfLine⦂ boolean
+  ⏺ i⦂ int · points to end of line
+  ⏺ startOfBlock⦂ boolean
+    if i < limit
+       ∢ (token i).name
+         ⬩ COM
+           result.(append (startOfBlock ? " {" ! ";") ⨭ " // "
+                   ⨭ (token i).value)
+         ⬩ KEY
+           if 0 ≤ result.indexOf "\u0001" · anonymous class or function
+              closingParentheses⦂ String:
+                (TAB result.length° - result.(indexOf "\u0001") - 1)
+                .replaceAll "\t", ")"
+              result.setLength result.indexOf "\u0001"
+              argumentList⦂ boolean: false
+              ∢ (token i).value
+                ⬩ "class"
+                  result.append " {"
+                  blocks.add *Block Head.ANONYM,
+                                    "}" ⊕ closingParentheses ⊕ ";"
+                  if ◤i < limit ∧ (token i).name = Lex.COM
+                     result.(append " // " ⨭ (token i).value)
+                  lines.add result.toString°
+                  return true
+
+                ⬩ "parameter"
+                  argumentList: true
+                  result.append "("
+                  🔁﹗ (token ◤i) ≈ Lex.KEY, "function"
+                      if (token i) ≈ Lex.OPR, "ListSeparator"
+                          result.append ", "
+                      else · NAM
+                          result.append (token i).value)
+                  result.append ")"
+                  fallthrough
+
+                ⬩ "function"
+                  result.append "()" unless argumentList
+                  result.append " -> {"
+                  blocks.add *Block Head.ANONYM,
+                                    "}" ⊕ closingParentheses ⊕ ";"
+                  if ◤i < limit ∧ (token i).name = Lex.COM
+                     result.(append " // " ⨭ (token i).value)
+                  lines.add result.toString°
+                  return true
+           else return false
+         else return false
+    else
+       result.append (startOfBlock ? " {" ! ";")
+    lines.add result.toString°
+    if blocks.size° ≤ line.indentation and startOfBlock
+       blocks.add *Block Head.ANONYM, "}"
+    return true
+
+  ▶ compile⦂ String
+  ⏺ expression⦂ Expression
+    parenthetical⦂ boolean:
+       expression.root.name = Lex.OPR and
+       (expression.root.value ≈ "Expression"
+        ∧¬ expression.left.root ≈ Lex.OPR, "Array"
+        ∧¬ expression.left.root ≈ Lex.OPR, "FunctionCall"
+        ∧¬ expression.left.root ≈ Lex.OPR, "Invocation"
+       or
+         ¬ expression.root.value ≈ "Expression"
+        ∧¬ expression.root.value ≈ "Access"
+        ∧¬ expression.root.value ≈ "Array"
+        ∧¬ expression.root.value ≈ "ListSeparator"
+        ∧¬ expression.root.value ≈ "FunctionCall"
+        ∧¬ expression.root.value ≈ "FirstTrue"
+         ∧ The.arities.get expression.root.value = 2)
+
+    result⦂ StringBuilder°
+
+    if expression.root.name = Lex.OPR
+       ∢ expression.root.value
+         ⬩ "Cast"           ⭆ result.append "("
+         ⬩ "Exponentiation" ⭆ result.append "Math.pow"
+         ⬩ "RotateLeft"     ⭆ result.append "Integer.rotateLeft"
+         ⬩ "RotateRight"    ⭆ result.append "Integer.rotateRight"
+
+    result.append "(" if parenthetical
+    result.append compile expression.left if ∃ expression.left
+    result.append ")" if  expression.root ≈ Lex.OPR, "Cast"
+
+    ∢ expression.root.name
+      ⬩ OPR
+        ∢ expression.root.value
+          ⬩ "Access"         ⭆ result.append '.'
+          ⬩ "Addition"       ⭆ result.append " + "
+          ⬩ "And"            ⭆ result.append " && "
+          ⬩ "Array"          ⭆ result.append '['
+          ⬩ "BitAnd"         ⭆ result.append " & "
+          ⬩ "BitOr"          ⭆ result.append " | "
+          ⬩ "BitXor"         ⭆ result.append " ^ "
+          ⬩ "Complement"     ⭆ result.append '~'
+          ⬩ "Concatenation"  ⭆ result.append " + "
+          ⬩ "Division"       ⭆ result.append " / "
+          ⬩ "Equal"          ⭆ result.append " == "
+          ⬩ "Exponentiation" ⭆ result.append ", " · Math.pow
+          ⬩ "FirstTrue"      ⭆ result.append expression.root.value · ???
+          ⬩ "FunctionCall"   ⭆ result.append '('
+          ⬩ "Invocation"     ⭆ result.append '('
+          ⬩ "Greater"        ⭆ result.append " > "
+          ⬩ "GreaterEqual"   ⭆ result.append " >= "
+          ⬩ "Identical"      ⭆ result.append " == "
+          ⬩ "Less"           ⭆ result.append " < "
+          ⬩ "LessEqual"      ⭆ result.append " <= "
+          ⬩ "ListSeparator"  ⭆ result.append ", "
+          ⬩ "Minus"          ⭆ result.append '-'
+          ⬩ "Modulus"        ⭆ result.append " % "
+          ⬩ "Multiplication" ⭆ result.append " * "
+          ⬩ "Nand"           ⭆ result.append expression.root.value · ???
+          ⬩ "New"            ⭆ result.append "new "
+          ⬩ "Nor"            ⭆ result.append expression.root.value · ???
+          ⬩ "Not"            ⭆ result.append '!'
+          ⬩ "NotEqual"       ⭆ result.append " != "
+          ⬩ "NotIdentical"   ⭆ result.append " != "
+          ⬩ "Or"             ⭆ result.append " || "
+          ⬩ "PostDecrement"  ⭆ result.append "--"
+          ⬩ "PreDecrement"   ⭆ result.append "--"
+          ⬩ "PostIncrement"  ⭆ result.append "++"
+          ⬩ "PreIncrement"   ⭆ result.append "++"
+          ⬩ "RotateLeft"     ⭆ result.append ", " · Integer.rotateLeft
+          ⬩ "RotateRight"    ⭆ result.append ", " · Integer.rotateRight
+          ⬩ "Quotient"       ⭆ result.append " / "
+          ⬩ "ShiftLeftZero"  ⭆ result.append " << "
+          ⬩ "ShiftRightSign" ⭆ result.append " >> "
+          ⬩ "ShiftRightZero" ⭆ result.append " >>> "
+          ⬩ "Subtraction"    ⭆ result.append " - "
+          ⬩ "TernaryTrue"    ⭆ result.append " ? "
+          ⬩ "TernaryFalse"   ⭆ result.append " : "
+          ⬩ "Xor"            ⭆ result.append " ^ "
+
+      ⬩ CHR ⭆ result.(append "'" ⨭ expression.root.value ⨭ "'")
+      ⬩ STR ⭆ result.(append '"' ⨭ expression.root.value ⨭ '"')
+      ⬩ KEY · anonymous class or function
+        ∢ expression.root.value
+          ⬩ "class", "function", "parameter"
+            return result.(append '\u0001').toString° · start of block
+
+      ‼ result.append expression.root.value
+
+    result.append compile expression.right if ∃ expression.right
+    result.append ']' if expression.root ≈ Lex.OPR, "Array"
+    result.append ')' if expression.root ≈ Lex.OPR, "FunctionCall"
+                      or expression.root ≈ Lex.OPR, "Invocation"
+                      or parenthetical
+
+    return result.toString°
+
+  ▶ getSource⦂ String
+    🔁﹖ blocks.size° > 0 · end of blocks
+        reduceBlocks°
+    result⦂ StringBuilder°
+    ∀ line ∈ lines⦂ String
+      result.(append line ⨭ System.lineSeparator°)
+    return result.toString°

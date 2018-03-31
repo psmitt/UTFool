@@ -1,3 +1,10 @@
+≣ Head      · of Blocks
+  ANONYM    · head of anonymous function or class; or inner scope
+  CONSTANTS · head of enum class
+  CLASS     · head of regular class to find constructor name
+  SELECTION · head of selection to identify cases
+  CASE      · head of case for break or fallthrough statements
+
 ■ Block
   name⦂ Head
   value⦂ String
@@ -17,10 +24,3 @@
   ⏺ value⦂ String
     ⏎ @name = name
     ∧ @value ≈ value
-
-≣ Head
-  ANONYM    · Anonymous Function or Class, or inner scope
-  CONSTANTS · Constants for enum constants
-  CLASS     · Class for constructor name
-  SELECTION · Selection head for cases
-  CASE      · Case for break or fallthrough

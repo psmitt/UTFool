@@ -1,0 +1,61 @@
+···
+usage: java -D"file.encoding=UTF-8" -jar …
+···
+⟦import java.nio.file.*;⟧
+§ import java.
+  io.IOException
+  nio.file.attribute.BasicFileAttributes
+  util.HashSet
+
+■ Translate
+  static
+  ▶ main ⏺ args⦂ String[]
+    if args.length > 0 and args[0] ≈ "--help"
+       System.out.println "Usage: java -D\"file.encoding=UTF-8\"
+          -jar Translate.jar [--help] [--root <path>] [--depth #]
+                             [--file <pattern>] [--overwrite]"
+    ͞Default options:
+    root⦂ String: "."
+    depth⦂ int: Integer.MAX_VALUE
+    file⦂ String: "*.utf8"
+    ⃫ugly wrapper for outer variable accessed from inner class:
+    final overwrite⦂ boolean[]: [ false ]
+    
+    ͞Manual options:
+    ∀ i ∈ 0 … args.length
+      ∢ args[i]
+        ⬩ "--root"      ⭆ root: args[◤i]
+        ⬩ "--depth"     ⭆ depth: java.lang.Integer.parseInt args[◤i]
+        ⬩ "--file"      ⭆ file: args[◤i]
+        ⬩ "--overwrite" ⭆ overwrite[0]: true
+
+    try
+       final matcher⦂ PathMatcher:
+             FileSystems.getDefault°.getPathMatcher "glob:*" + file
+       Files.walkFileTree (Paths.get root), *HashSet⟨FileVisitOption⟩°,
+                           depth, *SimpleFileVisitor⟨Path⟩° ■
+           ▶ visitFile⦂ FileVisitResult 🌠 IOException
+           ⏺ path⦂ Path
+           ⏺ attributes⦂ BasicFileAttributes
+             if matcher.matches path
+                destination⦂ String: path.toString°.(substring 0,
+                             path.toString°.lastIndexOf ".") ⊕ ".java"
+                if ¬ Files.exists Paths.get destination or overwrite[0]
+                     lexer⦂ Lexer *String Files.readAllBytes ↵
+                                          Paths.get path.toString°
+                     compiler⦂ JavaCompiler°
+                     ∀ line ∈ lexer.getLines° ⦂ Line
+                       compiler.compile line
+                     Files.write (Paths.get destination),
+                                 (compiler.getSource°.getBytes "utf-8"),
+                                  StandardOpenOption.CREATE,
+                                  StandardOpenOption.TRUNCATE_EXISTING
+             return FileVisitResult.CONTINUE
+
+           ▶ visitFileFailed⦂ FileVisitResult 🌠 IOException
+           ⏺ file⦂ Path
+           ⏺ exception⦂ IOException
+             return FileVisitResult.CONTINUE
+
+    catch e⦂ IOException
+      System.out.println "⸨e.getClass°.getSimpleName°⸩ - ⸨e.getMessage°⸩"

@@ -13,4 +13,4 @@
 
   ▶ toString⦂ String
     if ∄ left and ∄ right then return root.toString°
-    return "(⸨root⸩:⸨∃left?left!""⸩⸨∃right?";"⊕right!""⸩)"
+    return "(⸨root⸩:⸨left⁈""⸩⸨∃right?";"⊕right!""⸩)"

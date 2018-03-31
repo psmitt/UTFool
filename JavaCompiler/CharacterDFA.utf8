@@ -17,7 +17,7 @@ import java.util.LinkedList
 
   openingDelimiter⦂ String
   closingDelimiter⦂ String°
-  closingPosition⦂ int · walks through closingDelimiter in WC state
+  closingPosition⦂ int  · walks through closingDelimiter in WC state
   value⦂ StringBuilder° · value of the output token
 
   ▶ reset

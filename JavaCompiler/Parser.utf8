@@ -1,0 +1,176 @@
+import java.util.LinkedList
+
+■ Parser 
+  operandStack⦂ LinkedList⟨Expression⟩
+  operatorStack⦂ LinkedList⟨Token⟩
+  wasOperand⦂ boolean
+  potential⦂ Expression
+
+  ▶ reset⦂ Parser
+    operandStack: = *LinkedList⟨Expression⟩°
+    operatorStack: *LinkedList⟨Token⟩°
+    wasOperand: false
+    potential: null
+    return this
+
+  ▶ reduceOperationStack
+    right⦂ Expression: operandStack.removeLast°
+    lastOperator⦂ Token: operatorStack.removeLast°
+    operandStack.add *Expression lastOperator, (
+      if The.arities.get lastOperator.value = 1 · unary operator
+      then null else operandStack.removeLast°), right
+
+  ··· 
+  Parse the line tokens from the given index and
+  Return the index of token following the expression
+  ···
+  ▶ parse⦂ int
+  ⏺ line⦂ Line
+  ⏺ i⦂ int
+    tokens⦂ LinkedList⟨Token⟩: line.tokens
+    limit⦂ int: tokens.size°
+    coalesce⦂ boolean: false
+    existence⦂ boolean: false
+    🔁﹖ i < limit
+        token⦂ Token: tokens.get i◥
+
+        if token ≈ Lex.KEY, "class" · anonymous class: unary postfix
+           if operatorStack.getLast°.value ≈ "New" · unary prefix
+              operandStack.add *Expression operatorStack.removeLast°, ∅,
+                                           operandStack.removeLast°
+           operandStack.add *Expression token, operandStack.removeLast°, ∅
+           return i - 1 · return token's index
+
+        if  token.name = Lex.STR
+        and wasOperand
+        and operandStack.getLast°.root.name = Lex.STR
+        ͞Concatenate consecutive strings after interpolation:
+            previousString⦂ Expression: operandStack.removeLast°
+            previousString.root.value ⊕: token.value
+            operandStack.add previousString
+            continue
+
+        if token ≈ Lex.OPR, "TernaryTrue"
+           next⦂ Token: tokens.get i
+           if next ≈ Lex.OPR, "TernaryFalse" and not coalesce
+              tokens.add ◣i, *Token Lex.NAM, "null"
+              limit◥
+              token: *Token Lex.OPR, "NotIdentical"
+              coalesce: true
+           else if next.name = Lex.OPR
+               and The.arities.get next.value = 2
+               and not existence
+                   tokens.add  i, *Token Lex.OPR, "TernaryFalse"
+                   tokens.add  i, *Token Lex.NAM, "false"
+                   tokens.add ◣i, *Token Lex.NAM, "null"
+                   limit +: 3
+                   token: *Token Lex.OPR, "Identical"
+                   existence: true
+
+        argument⦂ Expression: null
+
+        ∢ token.name
+
+          ⬩ KEY · anonymous function
+            ∢ token.value
+              ⬩ "parameter", "function"
+              ‼ return i - 1 · return token's index
+            fallthrough
+
+          ⬩ BEG
+            parser⦂ Parser°
+            i: parser.reset°.parse line, i
+            if token.value ≈ "Array" · array reference
+               argument: *Expression (*Token Lex.OPR, "Array"),
+                         (wasOperand ? operandStack.removeLast° ! ∅),
+                          parser.getExpression°
+               operandStack.add argument
+               break
+            if token.value ≈ "Interpolation" · string interpolation
+               argument: *Expression (*Token Lex.OPR, "Expression"),
+                                      parser.getExpression°, ∅
+               operandStack.add *Expression ↵
+                               (*Token Lex.OPR, "Concatenation"),
+                                operandStack.removeLast°, argument
+               operatorStack.add *Token Lex.OPR, "Concatenation"
+               operandStack.add *Expression (*Token Lex.STR), ∅, ∅
+               wasOperand: true
+               break
+            if token.value ≈ "Expression" · parenthetical expression
+                argument: *Expression(*Token Lex.OPR, "Expression"),
+                                      parser.getExpression°, ∅
+            fallthrough
+
+          ⬩ NAM, NUM, CHR, STR
+            argument: *Expression token, ∅, ∅ unless Lex.BEG = token.name
+            unless wasOperand
+                   wasOperand: true
+                   operandStack.add argument
+                   if argument.root ≈ Lex.KEY, "function"
+                   or argument.root ≈ Lex.KEY, "parameter"
+                      return i - 1 · return token's index
+                   break
+
+            token: *Token Lex.OPR, "FunctionCall"
+            fallthrough
+
+          ⬩ OPR
+            if The.arities.get token.value = 0 · unary postfix
+               operandStack.add *Expression token,
+                                            operandStack.removeLast°, ∅
+               break
+            if The.arities.get token.value = 1 ∧ wasOperand · unary prefix
+               🔁﹗ operatorStack.isEmpty° or
+                  The.precedences.get "FunctionCall" ≤
+                  The.precedences.get operatorStack.getLast°.value
+                      reduceOperationStack°
+               operatorStack.add *Token Lex.OPR, "FunctionCall"
+            else
+               🔁﹗ operatorStack.isEmpty° or
+                  The.precedences.get token.value ≤ 
+                  The.precedences.get operatorStack.getLast°.value
+                      reduceOperationStack°
+            if ¬ operatorStack.isEmpty°
+            and  The.precedences.get token.value =
+                 The.precedences.get operatorStack.getLast°.value
+            and  The.leftAssociatives.contains token.value
+                 right⦂ Expression: operandStack.removeLast°
+                 operandStack.add *Expression operatorStack.removeLast°,
+                                   operandStack.removeLast°, right
+                 ͞Decompose chained relations:
+                 ∢ token.value
+                   ⬩ "Identical", "NotIdentical", "Equal", "NotEqual",
+                     "Less", "LessEqual", "Greater", "GreaterEqual"
+                     operandStack.add right
+                     operatorStack.add *Token Lex.OPR, "And"
+            operatorStack.add token
+            if token ≈ Lex.OPR, "NotIdentical" and coalesce
+            or token ≈ Lex.OPR, "Identical" and existence
+               potential: operandStack.getLast°
+            if token ≈ Lex.OPR, "TernaryTrue" and coalesce
+               operandStack.add potential
+               coalesce: false
+            if token ≈ Lex.OPR, "TernaryFalse" and existence
+               operandStack.add potential
+               existence: false
+            wasOperand: token.value ≈ "FunctionCall"
+            if wasOperand
+               operandStack.add argument
+               if argument.root ≈ Lex.KEY, "function"
+               or argument.root ≈ Lex.KEY, "parameter" · anonymous function
+                  return i - 1 · return token's index
+
+          ⬩ END
+            return i
+
+          ‼ return i - 1 · return token's index
+ 
+    return i
+
+  ▶ getExpression⦂ Expression
+    🔁﹖ operandStack.size° > 1 · wrap up
+        reduceOperationStack°
+    unless operatorStack.isEmpty°
+        or The.arities.get operatorStack.getLast°.value ≠ 1 · unary prefix
+        reduceOperationStack°
+    return operandStack.peekLast°

@@ -27,7 +27,7 @@ import java.util.LinkedList
     else
        openingDelimiter: start
        closingDelimiter: The.closingDelimiters.get start
-       line.reset null · so stop symbol of StringDFA is '\n'
+       line.reset null · thus stop symbol of StringDFA is '\n'
        value.setLength 0
        state: null · first line status until the first linebreak
 
@@ -54,28 +54,26 @@ import java.util.LinkedList
        and line.state ≠ StringDFA.State.IP · end of text
            line.consume '\n' · send stop symbol to StringDFA
            tokens.addAll line.getTokens°
-           ⃫Specify indentation in value
+           ⃫Specify indentation in value:
            value.setLength 0
            value.append tokens.removeLast°.value
            value.setLength value.length° - closingDelimiter.length° + 1
-           if tokens.size° ≠ 0
+           if ¬ tokens.isEmpty°
            or ¬ value.toString°.trim°.isEmpty°
               tokens.add *Token Lex.ERR, value.toString° ⊕
                          closingDelimiter ⊕ " < INVALID END OF TEXT"
               lines.add tokens
               tokens: *LinkedList⟨⟩° · clear would destroy the last line
               value.setLength 0 · no indentation when error
-           ⃫Build string with properly indented lines
+           ⃫Build string with properly indented lines:
            ∀ textline ∈ lines⦂ LinkedList⟨Token⟩
              firstToken⦂ Token: textline.removeFirst°
              if firstToken.name = Lex.ERR · invalid start of text
                 tokens.add firstToken
              else
-                if value.length° > firstToken.value.length°
-                   tokens.add *Token Lex.STR
-                else
-                   tokens.add *Token Lex.STR,
-                               firstToken.value.substring value.length°
+                tokens.add *Token Lex.STR,
+                  (firstToken.value.length° < value.length° ? "" !
+                   firstToken.value.substring value.length°)
              tokens.addAll textline
              tokens.add *Token Lex.STR, System.lineSeparator°
                    .(replaceAll "\r", "\\\\r").replaceAll "\n", "\\\\n"
@@ -98,17 +96,17 @@ import java.util.LinkedList
         line.reset null
         return lineResult
 
-    if ¬ line.consume c · error ?
-       tokens.addAll line.getTokens°
-       lines.add tokens
-       tokens: *LinkedList⟨⟩° · clear would destroy the last line
-       line.reset null
-       return line.consume c
+    unless line.consume c · error ?
+        tokens.addAll line.getTokens°
+        lines.add tokens
+        tokens: *LinkedList⟨⟩° · clear would destroy the last line
+        line.reset null
+        return line.consume c
 
     return true
 
   ▶ getTokens⦂ LinkedList⟨Token⟩
-    if state ≠ Lex.ERR
+    if state ≠ Lex.ERR · ERR is the stop and accept (!) state of the DFA
        tokens.clear°
        ∀ textline ∈ lines⦂ LinkedList⟨Token⟩
          tokens.addAll textline

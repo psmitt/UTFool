@@ -20,7 +20,7 @@ import java.util.Map
 
   dfa⦂ HashMap⟨Lex, DFA⟩° · Helper DFAs for Literals
 
-  symbol⦂ String · found Delimiter, Keyword, Operator, EmbeddedCode or Expletive
+  symbol⦂ String · found Alias, Delimiter, Keyword, Operator, EmbeddedCode or Expletive
   prefix⦂ StringBuilder° · current working item for finding next symbol
 
   ▶ new
@@ -75,8 +75,7 @@ import java.util.Map
            return true
         ͞End of Indentation
         thisIndentation⦂ String: indentation.toString°
-        lastIndentation⦂ String: indentations.peekLast°
-        if ∄ lastIndentation then lastIndentation: ""
+        lastIndentation⦂ String: indentations.peekLast° ⁈ ""
         unless thisIndentation ≈ lastIndentation · Indentation CHANGE
           if thisIndentation.startsWith lastIndentation · start of block
              indentations.add thisIndentation
@@ -313,7 +312,7 @@ import java.util.Map
            and lines.(get l + 1).indentation > lines.(get l).indentation
                if lines.(get l + 1).tokens.getFirst° ≈ Lex.KEY, "array"
                   l◥
-                  continue walkLines
+                  continue walkLines · recurse nested array
                else
                   if lines.(get l).tokens.getLast°.name = Lex.COM
                      lines.(get l).tokens.removeLast°
