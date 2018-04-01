@@ -105,7 +105,7 @@ Have a taste of it here, and see more on
 
 ## Trans-Compilation
 
-You find the first release of Java trans-compiler in Java.jar executable.
+You find the first release of the Java trans-compiler in the Java.jar executable.
 The transpilation requires the TSV files next to the JAR file. TSV files contain the specification for redefinable lexical elements. Their current content is aligned to the sources located in JavaCompiler and RosettaCode folders.
 
 The easiest was of trans-compiling any source file is just dropping the file into a subdirectory next to the translator (the same way as JavaCompiler or RosettaCode), and running Translate.bat on a double-click.
