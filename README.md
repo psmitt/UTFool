@@ -88,7 +88,7 @@ it is advisable to setup a font with great coverage of the Basic
 or even the Supplementary Multilingual Plane.
 [GNU FreeMono](https://www.gnu.org/software/freefont) is a good choice.
 
-Beyond of the font selection, another common need is
+Beyond the font selection, another common need is
 the easy typing of the different Unicode symbols on any keyboard.
 [AutoHotkey](https://autohotkey.com) offers the simplest solution
 by smart macros and handy shortcuts, making you able to insert any
@@ -103,6 +103,11 @@ Have a taste of it here, and see more on
 
 ![](https://raw.githubusercontent.com/psmitt/UTFool/master/sample.png)
 
-## UTFool Compiler to Java
+## Trans-Compilation
 
-Coming soon...
+You find the first release of Java trans-compiler in Java.jar executable.
+The transpilation requires the TSV files next to the JAR file. TSV files contain the specification for redefinable lexical elements. Their current content is aligned to the sources located in JavaCompiler and RosettaCode folders.
+
+The easiest was of trans-compiling any source file is just dropping the file into a subdirectory next to the translator (the same way as JavaCompiler or RosettaCode), and running Translate.bat on a double-click.
+
+For further switches run `java -jar Java.jar --help`
