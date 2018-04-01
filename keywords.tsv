@@ -1,0 +1,136 @@
+	array					array
+	¤							array
+
+	as						as
+	⦂							as
+
+	assign				assign
+	be						assign
+	:							assign
+	←							assign
+	≝							assign
+
+	await					await
+	⌚→						await
+	⏰→						await
+	⏱→						await
+	⏳→							await
+
+	break					break
+
+	by						by
+	#							by
+
+	catch					catch
+	!⃝							catch
+
+	class					class
+	■							class
+
+	constants			constants
+	≣							constants
+
+	constructor		constructor
+	new						constructor
+
+	continue			continue
+
+	ellipsis			ellipsis
+	...						ellipsis
+	…							ellipsis
+	⋯							ellipsis
+
+	else					else
+	!!						else
+	‼							else
+
+	fallthrough		fallthrough
+
+	finally				finally
+	‼⃝							finally
+
+	function			function
+	▶							function
+
+	goto					goto
+
+	if						if
+	case					if
+	when					if
+	??						if
+	⁇							if
+	⬩							if
+	≟							if
+
+	import				import
+	⎆							import
+
+	in						in
+	from					in
+	∈							in
+
+	Infinity			Infinity
+	∞							Infinity
+
+	interface 		interface
+	□							interface
+
+	iterate				iterate
+	repeat				iterate
+	loop					iterate
+	for						iterate
+	🔁							iterate
+	∀							iterate
+
+	label					label
+	🏷							label
+
+	NaN						NaN
+
+	of						of
+
+	package				package
+	📦							package
+
+	parameter			parameter
+	⚫							parameter
+	⏺							parameter
+	⦁							parameter
+	•							parameter
+
+	return				return
+	⏎							return
+
+	section				section
+	§							section
+
+	select				select
+	switch				select
+	check					select
+	∢							select
+
+	then					then
+	━▷						then
+	═▷						then
+	⭆							then
+	⇨							then
+
+	throw					throw
+	🌠							throw
+	⏏							throw
+
+	try						try
+	!⃤							try
+	⚠							try
+
+	unless				unless
+
+	until					until
+	﹗							until
+
+	while					while
+	﹖							while
+
+	↵							word wrap
+
+	yield					yield

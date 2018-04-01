@@ -1,0 +1,31 @@
+	∅							null
+	␀							null
+	off						false
+	yes						true
+
+	@							this.
+
+	elseif				else if
+	elif					else if
+	!?						else if
+	⁉							else if
+
+	⁈							?!
+
+	‥							…≤
+	to						…≤
+	up to					⋯<
+	up through		…≤
+	down to				⋯>
+	down through	…≥
+
+	⨭							).(append
+	≈							.equals
+	≊							.equals
+	≅							.equals
+	∃							null ≢
+	∄							null ≡
+	⊨							true =
+	⊭							true ≠
+
+	√							Math.sqrt 	\u205F medium mathematical space

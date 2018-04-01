@@ -1,0 +1,34 @@
+	·		LineComment				LineBreak
+	;		LineComment				LineBreak
+	⍝		LineComment				LineBreak
+	͞		LineComment				LineBreak
+	⃫		LineComment				LineBreak
+
+	···	BlockComment			···
+	͘		BlockComment			Space
+	{		BlockComment			}
+
+	⟦		EmbeddedCode			⟧
+
+	'		Character					'
+	‘		Character					’
+	‵		Character					′
+
+	"		String						"
+	“		String						”
+	‶		String						″
+
+	‷		Text							‴
+	␂		Text							␃
+	```	Text							```
+
+	⸨		Interpolation			⸩
+
+	⧘		RegularExpression	⧙
+	⧚		RegularBlock			⧛
+
+	⟨		TypeList					⟩
+
+	[		Array							]
+
+	(		Expression				)

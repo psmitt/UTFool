@@ -1,0 +1,54 @@
+_
+abstract			COD
+assert				COD
+boolean				NAM
+break					KEY
+byte					NAM
+case					KEY
+catch					KEY
+char					NAM
+class					KEY
+const					COD
+continue			KEY
+default
+do
+double				NAM
+else					KEY
+enum
+extends
+false					NAM
+final					COD
+finally				KEY
+float					NAM
+for						KEY
+goto					KEY
+if						KEY
+implements
+import				COD
+instanceof
+int						NAM
+interface			KEY
+long					NAM
+native				COD
+new
+null					NAM
+package				COD
+private				COD
+protected			COD
+public				COD
+return				KEY
+short					NAM
+static				COD
+strictfp			COD
+super					NAM
+switch				KEY
+synchronized	COD
+this					NAM
+throw					KEY
+throws
+transient			COD
+true					COD
+try						KEY
+void					NAM
+volatile			COD
+while					KEY

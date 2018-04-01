@@ -1,0 +1,75 @@
+	()		Invocation			unary postfix	left
+	°			Invocation			unary postfix	left
+
+	◥			PostIncrement		unary postfix	left
+	◢			PostDecrement		unary postfix	left
+
+	⋆			Cast						binary				right
+
+	.			Access					binary				left
+
+	◤			PreIncrement		unary prefix	right
+	◣			PreDecrement		unary prefix	right
+
+	*			New							unary prefix	right
+
+	∼			Complement			unary prefix	right
+	‐			Minus						unary prefix	right
+	¬			Not							unary prefix	right
+	not		Not							unary prefix	right
+	no		Not							unary prefix	right
+
+	«•		ShiftLeftZero		binary				left
+	•»		ShiftRightZero	binary				left
+	±»		ShiftRightSign	binary				left
+	«⮔		RotateLeft			binary				left
+	⮔»		RotateRight			binary				left
+
+	&			BitAnd					binary				left
+
+	|			BitOr						binary				left
+
+	‖			BitXor					binary				left
+
+	^			Exponentiation	binary				right
+
+	×			Multiplication	binary				left
+	÷			Division				binary				left
+	/			Quotient				binary				left
+	\			Modulus					binary				left
+
+	+			Addition				binary				left
+	-			Subtraction			binary				left
+
+	⊕			Concatenation		binary				left
+
+	,			ListSeparator		binary				right	like FunctionCall
+
+	are		Identical				binary				left
+	is		Identical				binary				left
+	≡			Identical				binary				left
+	≢			NotIdentical		binary				left
+	=			Equal						binary				left
+	≠			NotEqual				binary				left
+	<			Less						binary				left
+	≤			LessEqual				binary				left
+	>			Greater					binary				left
+	≥			GreaterEqual		binary				left
+
+	∧			And							binary				left
+	and		And							binary				left
+
+	∨			Or							binary				left
+	or		Or							binary				left
+
+	⊻			Xor							binary				left
+	xor		Xor							binary				left
+
+	⊼			Nand						binary				left
+
+	⊽			Nor							binary				left
+
+	⌇			FirstTrue				binary				left
+
+	?			TernaryTrue			ternary				left
+	!			TernaryFalse		ternary				left
