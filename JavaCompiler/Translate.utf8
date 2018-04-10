@@ -31,7 +31,7 @@ usage: java -D"file.encoding=UTF-8" -jar …
 
     try
        final matcher⦂ PathMatcher:
-             FileSystems.getDefault°.getPathMatcher "glob:*/" + file
+             FileSystems.getDefault°.getPathMatcher "glob:**/" + file
        Files.walkFileTree (Paths.get root), *HashSet⟨FileVisitOption⟩°,
                            depth, *SimpleFileVisitor⟨Path⟩° ■
            ▶ visitFile⦂ FileVisitResult 🌠 IOException
