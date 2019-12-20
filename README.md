@@ -22,8 +22,8 @@ With UTFool you can be concise or eloquent, according to your style.
 
 ## Formal Grammar
 
-* [UTFool Lexical Structure](https://rawgit.com/psmitt/metalanguage/master/examples/UTFool%20Lexical%20Structure.xml)
-* [UTFool Syntactic Grammar](https://rawgit.com/psmitt/metalanguage/master/examples/UTFool%20Syntactic%20Grammar.xml)
+* [UTFool Lexical Structure](http://psmitt.github.io/grammar/UTFool%20Lexical%20Structure.xml)
+* [UTFool Syntactic Grammar](http://psmitt.github.io/grammar/UTFool%20Syntactic%20Grammar.xml)
 
 Notice the moderate vocabulary of the grammar.
 The aim is to give you the widest room for creating your own terms.
